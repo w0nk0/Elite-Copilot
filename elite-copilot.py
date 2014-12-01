@@ -2,9 +2,9 @@ __author__ = 'nico'
 APPNAME = "Elite-Copilot"
 APPVERSION = "0.11"
 
-CHECK_TIME = 5000
+CHECK_TIME = 10000
 REPEAT_NEXT_JUMPS_TIME = 30000
-NEXT_JUMP_WAIT_TIME = 2000
+NEXT_JUMP_WAIT_TIME = 8000
 UPCOMING_JUMPS_NO = 2
 
 _HELP = """
@@ -17,6 +17,8 @@ Routes will be saved on program exit and be reloaded next time it's started.
 Route items should be *partial* (or full if you're less lazy than me (: ) names of systems you want to go through.
 
 You should include the starting and ending system ideally. The router will give announce your next jump when you are in a new system. It will mark visited systems as DONE.
+
+If it doesn't work for you, you can try the "..-console.exe" version which will show debug output in a console window.
 """
 
 inactive_help = """The 'Reload Route' button will put the waypoints back into the editor that the router currently
@@ -112,6 +114,12 @@ class CopilotWidget(QWidget):
         self.connect(self.watch_log_timer, SIGNAL("timeout()"), self.check_netlog)
         self.watch_log_timer.start(CHECK_TIME)
 
+        w = self.Watcher
+        assert(isinstance(w,LogWatcher))
+        fn = w._find_logfile()
+        self.message("Will use file '%s' for jump data (or a newer one if one is created later)\n" % fn)
+
+
     def check_netlog(self):
         self.donate_btn.setEnabled(False)
         w = self.Watcher
@@ -153,7 +161,7 @@ class CopilotWidget(QWidget):
 
     def new_system_callback(self, system):
         self.next_jumps_time = time()
-        self.message("\nWelcome in system %s!" % system)
+        self.message("\n# Entering system %s!" % system)
         if self.routing:
             self.Speaker.announce_system(system)
             QTimer().singleShot(NEXT_JUMP_WAIT_TIME, lambda: self.check_route(system))

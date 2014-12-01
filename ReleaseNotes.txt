@@ -1,0 +1,5 @@
+V0.11
+
+- Fixed a bug that would use an older netlog files instead of the newest one. It sorted files by filename before, now sorts by creation date.
+- Writing the netlog file being looked at in the message window
+- Some minor wording changes

@@ -56,5 +56,5 @@ class EliteTalker:
 
     def announce_system(self, system):
         self.s.setProperty("rate", SP_FAST)
-        self.say("Arrived in system ")
+        self.say("Entering system ")
         self.speak_system(system+"!!")
