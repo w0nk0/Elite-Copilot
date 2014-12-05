@@ -8,8 +8,8 @@ NEXT_JUMP_WAIT_TIME = 9000
 UPCOMING_JUMPS_NO = 3
 UPCOMING_ANNOUNCE_BLOCK_TIME = 40
 
-NATOSPELL = True
-HYPHENSPELL = False
+NATOSPELL = "True"
+HYPHENSPELL = "False"
 
 _HELP = """
 HELP
@@ -41,6 +41,7 @@ from talk import EliteTalker
 from donate import write_html
 from systems import EliteSystems
 
+
 class CopilotWidget(QWidget):
     def __init__(self, parent=None):
         super(CopilotWidget, self).__init__(parent)
@@ -51,7 +52,6 @@ class CopilotWidget(QWidget):
         self.log_path = None
         self.watch_log_timer = None
         self.next_jumps_time = time()
-        self.systems = EliteSystems()
 
         self.nato_spell = (parent.settings.value("Nato_spelling", NATOSPELL).lower() == "true")
         self.hyphen_spell = (parent.settings.value("Hyphen_spelling", HYPHENSPELL).lower() == "true")
@@ -86,6 +86,13 @@ class CopilotWidget(QWidget):
         self.RouteWidget.setFont(QFont("Verdana", 14))
         self.MessageWidget = QTextEdit()
         self.RouteWidget.setFont(QFont("Arial", 12))
+
+        try:
+            self.systems = EliteSystems()
+        except:
+            msg = QMessageBox()
+            msg.setText("You need the systems.json file for routing, please download it from where you got this program from.")
+            msg.exec_()
 
         all_layout.addLayout(button_layout)
         all_layout.addSpacing(10)
@@ -184,7 +191,7 @@ class CopilotWidget(QWidget):
             QTimer().singleShot(NEXT_JUMP_WAIT_TIME, lambda: self.check_route(system))
             target = self.Router.get_route()[-1]
             distance = self.systems.distance_between(system, target)
-            self.Speaker.say("%d Light years to %s" % (distance,target))
+            self.Speaker.say("%d Light years to %s" % (distance, target))
 
     def set_log_path(self, path):
         # self.message('Netlog path set to %s' % path)
@@ -208,7 +215,7 @@ class CopilotWidget(QWidget):
     # def load_route(self):
     # return
     # #self.RouteWidget.setText("#TODO MUST LOAD A ROUTE HERE!")
-    #     #self.message("Route LOADED FROM XXXX")
+    # #self.message("Route LOADED FROM XXXX")
 
     def close(self, e):
         self.write_route()
@@ -316,7 +323,7 @@ class CopilotWidget(QWidget):
         self.message("to the last line in the route window. It's very simple and may fail.\n")
         txt = self.RouteWidget.toPlainText()
         lines = [l.strip() for l in txt.split("\n")]
-        while len(lines[-1]) <2:
+        while len(lines[-1]) < 2:
             del lines[-1]
 
         start = lines[0]
@@ -327,7 +334,7 @@ class CopilotWidget(QWidget):
             self.message("No floating point found in second line, defaulting to 12 LY")
             drive = 12.0
 
-        route = self.systems.route(start,destination,drive)
+        route = self.systems.route(start, destination, drive)
         if not route:
             self.message("Couldn't find a route")
             return
@@ -337,7 +344,6 @@ class CopilotWidget(QWidget):
         self.RouteWidget.setText("\n".join(route))
         self.routing = True
         self.set_route_from_widget()
-
 
 
 class CopilotWindow(QMainWindow):
