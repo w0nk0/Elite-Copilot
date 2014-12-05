@@ -11,15 +11,14 @@ speech = pyttsx.init()
 
 path = r"C:\_SSD_\Frontier\EDLaunch\Products\FORC-FDEV-D-1002\Logs"
 
+
 def debug(s):
     return
     print(s)
 
-def find_latest_log(path):
-    """Returns the latest log file's path"""
 
 class LogWatcher:
-    def __init__(self,path):
+    def __init__(self, path):
         self.path = path
         self.fn = None
         self._last_visited = None
@@ -34,7 +33,7 @@ class LogWatcher:
     def last_system(self):
         return self._last_visited
 
-    def register_callback(self,func):
+    def register_callback(self, func):
         """Func needs to accept one parameter, string, the system name"""
         self.callback = func
 
@@ -47,19 +46,17 @@ class LogWatcher:
         if not len(allfiles):
             return ""
 
-        with_path = lambda x: os.path.join(self.path,x)
+        with_path = lambda x: os.path.join(self.path, x)
         allfiles.sort(key=lambda x: os.path.getmtime(with_path(x)))
         full_path = with_path(allfiles[-1])
         return full_path
 
-
-
-    def _read_log(self,fn = None):
+    def _read_log(self, fn=None):
         """
 
         :rtype : str
         """
-        log=""
+        log = ""
         fn = fn or self._find_logfile()
 
         if not fn: return ""
@@ -67,12 +64,12 @@ class LogWatcher:
         self._logfile = fn
         debug("Reading %s" % fn)
         with open(fn,"rt") as f:
-            log=f.read()
+            log = f.read()
 
         return log
 
-
-    def _get_systems(self,logtxt):
+    @staticmethod
+    def _get_systems(logtxt):
         import re
         regex = re.compile(ur'System:\d+\((?P<System>.*?)\).*?Body:(?P<Body>\d+)')
         systems=[]
@@ -85,15 +82,15 @@ class LogWatcher:
         return systems
 
     def _check_log(self):
-        log=self._read_log()
-        systems=self._get_systems(log)
+        log = self._read_log()
+        systems = self._get_systems(log)
 
         if not systems:
             return
 
         last_system = systems[-1]
-        print "%d systems found in file %s: last_visited: %s" %(len(systems),self._logfile, self._last_visited)
-        print "Now: ",last_system
+        #print "%d systems found in file %s: last_visited: %s" %(len(systems),self._logfile, self._last_visited)
+        print "Last system found in ..%s: %s" % (self._logfile[-14:], last_system)
         if last_system == self._last_visited:
             return
 

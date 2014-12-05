@@ -1,3 +1,12 @@
+V 0.13
+
+- Experimental route finding included
+- can use nato spelling for longer star names 
+  (seting only in .ini file for now)
+- optimized timing for announcements
+- will announce remaining distance in LY to target system
+
+
 V0.11
 
 - Fixed a bug that would use an older netlog files instead of the newest one. It sorted files by filename before, now sorts by creation date.

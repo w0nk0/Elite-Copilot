@@ -1,39 +1,38 @@
-
 _route = "".split(",")
 route_systems = set(_route)
 
+
 class EliteRouter:
-    def __init__(self,route):
-        #route = route or _route
-        assert(isinstance(route,list))
+    def __init__(self, route):
+        # route = route or _route
+        assert (isinstance(route, list))
         self.route = []
         for i in route:
             #if i.startswith("DONE"): continue
             i = i.lower().strip()
-            i = i.replace("done","DONE")
-            if len(i)>1:
+            i = i.replace("done", "DONE")
+            if len(i) > 1:
                 self.route.append(i)
 
     def get_route(self):
         return self.route
 
-    def next_jump(self,current_system):
+    def next_jump(self, current_system):
         cur = current_system.lower()
-        next_system = "Not found :("
 
         found = -1
-        for idx,sys in enumerate(self.route):
+        for idx, sys in enumerate(self.route):
             if sys in cur:
-                found=idx
+                found = idx
 
         if found > -1:
-            if len(self.route) > found+1:
-                next_system = self.route[found+1]
+            if len(self.route) > found + 1:
+                next_system = self.route[found + 1]
             else:
-                next_system = "None, you have arrived!"
+                next_system = "You have arrived at your destination!"
 
             # check off visited systems
-            for i in range(0,found+1):
+            for i in range(0, found + 1):
                 if not self._is_done(self.route[i]):
                     self.route[i] = self._done(self.route[i])
         else:
@@ -41,13 +40,15 @@ class EliteRouter:
 
         return next_system
 
-    def _done(self,item):
-        item = "DONE: "+item
+    @staticmethod
+    def _done(item):
+        item = "DONE: " + item
         return item
 
-    def _undone(self,item):
-        item = item.replace("DONE: ","")
-        item = item.replace("done: ","")
+    @staticmethod
+    def _undone(item):
+        item = item.replace("DONE: ", "")
+        item = item.replace("done: ", "")
         return item
 
     @staticmethod
@@ -56,27 +57,27 @@ class EliteRouter:
             return True
         return False
 
-    def remaining_route(self, next_steps_num = 999):
+    def remaining_route(self, next_steps_num=999):
         """
         :param next_steps_num: Number of steps to return
         :return: Returns a string with next_steps remaining stops
         :rtype: str
         """
         result = []
-        print "r:",self.route
+        # print "r:",self.route
         for i in self.route:
             if self._is_done(i):
                 continue
             result.append(i)
-        result = "! ".join(result[:next_steps_num])
-        print "rem:",result
+        result = result[:next_steps_num]
+        #print "rem:",result
         return result
 
     def route_complete(self):
-        return len(self.remaining_route())<1
+        return len(self.remaining_route()) < 1
 
     def reverse_route(self):
-        #print "r route:", self.route
+        # print "r route:", self.route
         self.route.reverse()
         result = []
         for item in self.route:
@@ -96,6 +97,7 @@ def test():
     print e.route
     print e.next_jump("Earth")
     print e.route
+
 
 if __name__ == "__main__":
     test()
