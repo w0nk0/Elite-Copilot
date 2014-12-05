@@ -1,3 +1,9 @@
+V 0.14
+
+- Route caching enabled, download the neighbor-cache file to speed up routing substantially
+- after running the new version, the .ini will have an entry Route_caching=true, set that to false to disable and speed up startup, or just delete/don't download the neighbor-cache file
+- several optimizations
+
 V 0.13
 
 - Experimental route finding included

@@ -1,6 +1,6 @@
 __author__ = 'nico'
-APPNAME = "Elite-Copilot"
-APPVERSION = "0.13"
+APPNAME = 'Elite-Copilot'
+APPVERSION = '0.14'
 
 CHECK_TIME = 10000
 REPEAT_NEXT_JUMPS_TIME = 90000
@@ -8,22 +8,23 @@ NEXT_JUMP_WAIT_TIME = 9000
 UPCOMING_JUMPS_NO = 3
 UPCOMING_ANNOUNCE_BLOCK_TIME = 40
 
-NATOSPELL = "True"
-HYPHENSPELL = "False"
+NATOSPELL = 'True'
+HYPHENSPELL = 'False'
+ROUTE_CACHING = "True"
 
-_HELP = """
-HELP
-****
-To get going, you need to find any of your installation of E:D's netLog files, which are in your Launcher->Products->FORC..->Logs folder! You only need to do this once.
-Enter a route in the top window. When you're done, click 'Set Route'. If you edit the route later, remember to also 'Set Route' it so it's being used!
-Routes will be saved on program exit and be reloaded next time it's started.
-
-Route items should be *partial* (or full if you're less lazy than me (: ) names of systems you want to go through.
-
-You should include the starting and ending system ideally. The router will give announce your next jump when you are in a new system. It will mark visited systems as DONE.
-
-If it doesn't work for you, you can try the "..-console.exe" version which will show debug output in a console window.
-"""
+_HELP = ("\n"
+         "HELP\n"
+         "****\n"
+         "To get going, you need to find any of your installation of E:D's netLog files, which are in your Launcher->Products->FORC..->Logs folder! You only need to do this once.\n"
+         "Enter a route in the top window. When you're done, click 'Set Route'. If you edit the route later, remember to also 'Set Route' it so it's being used!\n"
+         "Routes will be saved on program exit and be reloaded next time it's started.\n"
+         "\n"
+         "Route items should be *partial* (or full if you're less lazy than me (: ) names of systems you want to go through.\n"
+         "\n"
+         "You should include the starting and ending system ideally. The router will give announce your next jump when you are in a new system. It will mark visited systems as DONE.\n"
+         "\n"
+         "If it doesn't work for you, you can try the \"..-console.exe\" version which will show debug output in a console window.\n"
+)
 
 inactive_help = """The 'Reload Route' button will put the waypoints back into the editor that the router currently
 uses for routing, so you can change and 'Set Route' them again.
@@ -39,7 +40,7 @@ from route import EliteRouter
 from watchlog import LogWatcher
 from talk import EliteTalker
 from donate import write_html
-from systems import EliteSystems
+from elitesystems import EliteSystemsList
 
 
 class CopilotWidget(QWidget):
@@ -55,6 +56,7 @@ class CopilotWidget(QWidget):
 
         self.nato_spell = (parent.settings.value("Nato_spelling", NATOSPELL).lower() == "true")
         self.hyphen_spell = (parent.settings.value("Hyphen_spelling", HYPHENSPELL).lower() == "true")
+        self.route_caching = (parent.settings.value("Route_caching", ROUTE_CACHING).lower() == "true")
 
         self.Speaker = EliteTalker(nato_spelling=self.nato_spell, hyphen_spelling=self.hyphen_spell)
         print("Nato_spell %s, Hyphen_spell %s" % (self.Speaker.nato, self.Speaker.hyphen))
@@ -88,7 +90,14 @@ class CopilotWidget(QWidget):
         self.RouteWidget.setFont(QFont("Arial", 12))
 
         try:
-            self.systems = EliteSystems()
+            if self.route_caching:
+                self.Speaker.say("Loading route cache, hang on!")
+            self.systems = EliteSystemsList(caching=self.route_caching)
+            if self.route_caching:
+                if self.systems.pre_cache:
+                    self.say("Done!!")
+                else:
+                    self.say("Failed.")
         except:
             msg = QMessageBox()
             msg.setText("You need the systems.json file for routing, please download it from where you got this program from.")
@@ -121,7 +130,7 @@ class CopilotWidget(QWidget):
         """Sets up the Watcher, needs self.log_path to be set"""
         if not self.log_path:
             self.message('No netlog-path set. Please navigate to your E:D\'s Logs folder with the button above!')
-            QTimer().singleShot(2000, lambda: self._setup_watcher())
+            QTimer().singleShot(5000, lambda: self._setup_watcher())
             return False
 
         self.Watcher = LogWatcher(self.log_path)
@@ -191,7 +200,8 @@ class CopilotWidget(QWidget):
             QTimer().singleShot(NEXT_JUMP_WAIT_TIME, lambda: self.check_route(system))
             target = self.Router.get_route()[-1]
             distance = self.systems.distance_between(system, target)
-            self.Speaker.say("%d Light years to %s" % (distance, target))
+            if distance:
+                self.Speaker.say("%d Light years to %s" % (distance, target))
 
     def set_log_path(self, path):
         # self.message('Netlog path set to %s' % path)
@@ -373,6 +383,7 @@ class CopilotWindow(QMainWindow):
         self.settings.setValue("NetlogPath", self.mainWidget.get_log_path())
         self.settings.setValue("Nato_spelling", self.mainWidget.nato_spell)
         self.settings.setValue("Hyphen_spelling", self.mainWidget.hyphen_spell)
+        self.settings.setValue("Route_caching", self.mainWidget.route_caching)
         self.settings.setValue("LastRoute", self.get_route_text())
 
     def get_route_text(self):
