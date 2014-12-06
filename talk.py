@@ -60,9 +60,9 @@ class EliteTalker:
             sys_nato = ""
             for w in sys.split(" "):
                 if len(w) < self.nato_max_length:
-                    sys_nato += nato_spell(w)
+                    sys_nato += " "+nato_spell(w)
                 else:
-                    sys_nato += w
+                    sys_nato += " "+w
             sys = sys_nato
         #print "## DEBUG sys", sys
 

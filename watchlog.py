@@ -31,7 +31,9 @@ class LogWatcher:
         return self._new_system
 
     def last_system(self):
-        return self._last_visited
+        result = self._last_visited or self._get_systems(self._read_log())[-1]
+        #print "Watcher->last_system:",result
+        return result
 
     def register_callback(self, func):
         """Func needs to accept one parameter, string, the system name"""

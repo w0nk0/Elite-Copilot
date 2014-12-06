@@ -19,10 +19,10 @@ class EliteRouter:
 
     def next_jump(self, current_system):
         cur = current_system.lower()
-
+        print "Checking %s" % cur
         found = -1
         for idx, sys in enumerate(self.route):
-            if sys in cur:
+            if self._undone(sys) in cur:
                 found = idx
 
         if found > -1:

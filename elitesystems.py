@@ -4,7 +4,7 @@ import json
 from math import sqrt
 
 PRE_CACHE_DIST = 35.0
-DEFAULT_JUMP_LENGTH = 12.0
+DEFAULT_JUMP_LENGTH = 13.0
 
 
 class Coordinate:
@@ -65,14 +65,16 @@ class EliteSystemsList:
         if not system:
             system = elitesystems.guess_system_name(system_name, guess_partial=True)
             print "Guessing you mean %s ?" % system
-        if not system: return None
+        if not system:
+            return None
 
         return EliteSystem(system, Coordinate(self.coordinates[system]))
 
     def neighbors(self, system, max_distance):
         if self.caching:
             cached = self.known_neighbors.get((system, max_distance))
-            if cached: return cached
+            if cached:
+                return cached
 
         c_sys = Coordinate(self.coordinates[system])
 
@@ -85,7 +87,8 @@ class EliteSystemsList:
             if c_sys.distance(Coordinate(x), False) < max_distance * max_distance:  #avoiding sqrt overhead
                 result[n] = x
                 #print x
-        if self.caching: self.known_neighbors[(system, max_distance)] = result
+        if self.caching:
+            self.known_neighbors[(system, max_distance)] = result
         return result
 
     def neighbor_ranks(self, system, target, max_distance, ignore_systems):
@@ -233,7 +236,7 @@ class EliteSystemsList:
         self.pre_cache_lightyears = PRE_CACHE_DIST
 
         print "Filling pre-cache"
-        from pickle import loads
+        from cPickle import loads
         import zlib
 
         try:
@@ -290,7 +293,6 @@ class EliteSystemsList:
             zipped = zlib.compress(text)
             output.write(zipped)
         print "Done!"
-
 
 def run(sys1="Sol", sys2="Bingo"):
     print EliteSystemsList().route(sys1, sys2, 14.0)

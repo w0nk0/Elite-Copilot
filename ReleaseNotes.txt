@@ -1,3 +1,11 @@
+V 0.16
+
+- Dynamic rerouting! If you get lost (aka your current system is not in your route), you'll get a new route
+  (check box in the interface to disable it if you don't want that)
+- Routing will now announce remaining travel instead of crows distance
+- Better announcements of next jumps on new route calculation
+- Loading of cached routing data accelerated significantly
+
 V 0.15
 
 - Routing will now announce number of steps and total jump distance
