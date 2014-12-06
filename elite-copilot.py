@@ -1,12 +1,12 @@
 __author__ = 'nico'
 APPNAME = 'Elite-Copilot'
-APPVERSION = '0.14'
+APPVERSION = '0.15'
 
 CHECK_TIME = 10000
-REPEAT_NEXT_JUMPS_TIME = 90000
+REPEAT_NEXT_JUMPS_TIME = 75000
 NEXT_JUMP_WAIT_TIME = 9000
 UPCOMING_JUMPS_NO = 3
-UPCOMING_ANNOUNCE_BLOCK_TIME = 40
+UPCOMING_ANNOUNCE_BLOCK_TIME = 60
 
 NATOSPELL = 'True'
 HYPHENSPELL = 'False'
@@ -69,7 +69,7 @@ class CopilotWidget(QWidget):
         b.append((QPushButton("Set Route"), self.set_route_clicked))
         # b.append((QPushButton("Reload Route"),self.reload_route_to_widget))
         b.append((QPushButton("Reverse Route"), self.reverse_route))
-        b.append((QPushButton("Experimental: Find Route"), self.find_route))
+        b.append((QPushButton("Find Route"), self.find_route))
         b.append((QPushButton("Set netlog Path"), self.netlog_path_dialog))
         b.append((QPushButton("Help"), self.display_help))
 
@@ -91,7 +91,7 @@ class CopilotWidget(QWidget):
 
         try:
             if self.route_caching:
-                self.Speaker.say("Loading route cache, hang on!")
+                self.Speaker.say("Loading cache!")
             self.systems = EliteSystemsList(caching=self.route_caching)
             if self.route_caching:
                 if self.systems.pre_cache:
@@ -341,19 +341,29 @@ class CopilotWidget(QWidget):
         try:
             drive = float(lines[1])
         except:
-            self.message("No floating point found in second line, defaulting to 12 LY")
-            drive = 12.0
+            self.message("No floating point found in second line, using default")
+            drive = -1
 
         route = self.systems.route(start, destination, drive)
         if not route:
             self.message("Couldn't find a route")
             return
-        params = (len(route), start, destination, drive)
+
+
+        params = (len(route), start, destination, self.systems.last_routing_jump_distance)
         self.message("Route with %d steps from %s to %s with %.1f LY jump distance." % params)
-        #self.message(",".join(route))
+
         self.RouteWidget.setText("\n".join(route))
         self.routing = True
         self.set_route_from_widget()
+
+        params = len(route), self.systems.route_length(route)
+        if params[1] < 0:
+            self.say("Couldn't find full route, sorry!")
+        else:
+            self.say("Route found. %d steps, %.1f light years total!" % (params))
+
+        #self.message(",".join(route))
 
 
 class CopilotWindow(QMainWindow):

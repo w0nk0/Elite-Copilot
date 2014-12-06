@@ -4,6 +4,7 @@ import json
 from math import sqrt
 
 PRE_CACHE_DIST = 35.0
+DEFAULT_JUMP_LENGTH = 12.0
 
 class Coordinate:
     def __init__(self,vector):
@@ -51,6 +52,7 @@ class EliteSystemsList:
         self.known_neighbors = {} # dict of (system, range) -> list
         self.pre_cache = {} # dict of {range :  {system: neighbors}, .. } caches
         self.pre_cache_lightyears = 0
+        self.last_routing_jump_distance = DEFAULT_JUMP_LENGTH
 
         if self.caching:
             self.fill_pre_cache()
@@ -93,7 +95,16 @@ class EliteSystemsList:
         matches.sort(key=lambda x:x[1])
         return matches
 
-    def route(self, a_start, a_target, max_distance, verbose=True):
+    def route(self, a_start, a_target, max_distance=-1, verbose=True, avoid_systems=[]):
+
+        if max_distance < 0 and self.last_routing_jump_distance:
+            max_distance = self.last_routing_jump_distance
+
+        self.last_routing_jump_distance = max_distance
+
+        if max_distance < 0:
+            return ["Max jump distance unknown!"]
+
         start = self.guess_system_name(a_start)
         if not start in self.coordinates.keys():
             print "System unknown:", a_start
@@ -107,13 +118,13 @@ class EliteSystemsList:
         current = start
         steps = [start]
         failures = 0
-        bad_steps = []
+        bad_steps = [self.guess_system_name(x) for x in avoid_systems]
 
         lowest_dist=9999
         closest_system=start
 
         while not current == target:
-            n =self.neighbor_ranks(current,target,max_distance, bad_steps)
+            n = self.neighbor_ranks(current,target,max_distance, bad_steps)
             OK = lambda x: x not in bad_steps and x not in steps
             eligible = [node for node in n if OK(node[0][0])]
             n = eligible
@@ -169,6 +180,19 @@ class EliteSystemsList:
             return []
 
         return steps
+
+    def route_length(self,route_steps):
+        previous = None
+        distance = 0.0
+        for step in route_steps:
+            if previous:
+                try:
+                    distance += self.distance_between(step,previous)
+                except:
+                    print "Couldn't find distance from %s to %s" % (step,previous)
+                    return -1.0
+            previous = step
+        return distance
 
     def guess_system_name(self,name, guess_partial=False):
         s = None

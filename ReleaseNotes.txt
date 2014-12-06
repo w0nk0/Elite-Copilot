@@ -1,3 +1,8 @@
+V 0.15
+
+- Routing will now announce number of steps and total jump distance
+- Routing will use the previously used jump distance instead of the default if none is provided and the user has searched a route since program start
+
 V 0.14
 
 - Route caching enabled, download the neighbor-cache file to speed up routing substantially
