@@ -100,7 +100,8 @@ class CopilotWidget(QWidget):
                     self.say("Failed.")
         except:
             msg = QMessageBox()
-            msg.setText("You need the systems.json file for routing, please download it from where you got this program from.")
+            msg.setText(
+                "You need the systems.json file for routing, please download it from where you got this program from.")
             msg.exec_()
 
         all_layout.addLayout(button_layout)
@@ -126,6 +127,7 @@ class CopilotWidget(QWidget):
         self._setup_watcher()
         self._setup_upcoming()
 
+    # noinspection PyProtectedMember
     def _setup_watcher(self):
         """Sets up the Watcher, needs self.log_path to be set"""
         if not self.log_path:
@@ -245,7 +247,7 @@ class CopilotWidget(QWidget):
             f.write(log)
 
     def set_route_text(self, text_or_list):
-        #self.message("Sending route in upper editor to router")
+        # self.message("Sending route in upper editor to router")
         if isinstance(text_or_list, list):
             text = [line.strip() for line in text_or_list.split("\n")]
         elif isinstance(text_or_list, basestring):
@@ -349,7 +351,6 @@ class CopilotWidget(QWidget):
             self.message("Couldn't find a route")
             return
 
-
         params = (len(route), start, destination, self.systems.last_routing_jump_distance)
         self.message("Route with %d steps from %s to %s with %.1f LY jump distance." % params)
 
@@ -361,9 +362,9 @@ class CopilotWidget(QWidget):
         if params[1] < 0:
             self.say("Couldn't find full route, sorry!")
         else:
-            self.say("Route found. %d steps, %.1f light years total!" % (params))
+            self.say("Route found. %d steps, %.1f light years total!" % params)
 
-        #self.message(",".join(route))
+            # self.message(",".join(route))
 
 
 class CopilotWindow(QMainWindow):
