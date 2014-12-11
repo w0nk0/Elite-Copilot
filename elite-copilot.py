@@ -1,12 +1,12 @@
 __author__ = 'nico'
 APPNAME = 'Elite-Copilot'
-APPVERSION = '0.16'
+APPVERSION = '0.18'
 
 CHECK_TIME = 10000
-REPEAT_NEXT_JUMPS_TIME = 75000
+REPEAT_NEXT_JUMPS_TIME = 45000
 NEXT_JUMP_WAIT_TIME = 9000
-UPCOMING_JUMPS_NO = 3
-UPCOMING_ANNOUNCE_BLOCK_TIME = 60
+UPCOMING_JUMPS_NO = 2
+UPCOMING_ANNOUNCE_BLOCK_TIME = 80
 
 NATOSPELL = 'True'
 HYPHENSPELL = 'False'
@@ -53,10 +53,12 @@ class CopilotWidget(QWidget):
         self.log_path = None
         self.watch_log_timer = None
         self.next_jumps_time = time()
+        self.no_reroute_systems = []
 
         self.nato_spell = (parent.settings.value("Nato_spelling", NATOSPELL).lower() == "true")
         self.hyphen_spell = (parent.settings.value("Hyphen_spelling", HYPHENSPELL).lower() == "true")
         self.route_caching = (parent.settings.value("Route_caching", ROUTE_CACHING).lower() == "true")
+        self.default_jump_length = float(parent.settings.value("Default_jump_length", 0))
 
         self.Speaker = EliteTalker(nato_spelling=self.nato_spell, hyphen_spelling=self.hyphen_spell)
         print("Nato_spell %s, Hyphen_spell %s" % (self.Speaker.nato, self.Speaker.hyphen))
@@ -70,16 +72,11 @@ class CopilotWidget(QWidget):
         # b.append((QPushButton("Reload Route"),self.reload_route_to_widget))
         b.append((QPushButton("Reverse Route"), self.reverse_route))
         b.append((QPushButton("Find Route"), self.find_route))
-        b.append((QPushButton("Set netlog Path"), self.netlog_path_dialog))
         b.append((QPushButton("Help"), self.display_help))
 
         for b in self.buttons:
             button_layout.addWidget(b[0])
             b[0].clicked.connect(b[1])
-
-
-        self.reroute_cb = QCheckBox("Rerouting")
-        button_layout.addWidget(self.reroute_cb)
 
         self.donate_btn = btn = QPushButton(";)")
         self.donate_btn.setEnabled(False)
@@ -88,6 +85,19 @@ class CopilotWidget(QWidget):
         button_layout.addSpacing(50)
         button_layout.addWidget(btn)
 
+        button_layout_2 = QHBoxLayout()
+
+        netlog_btn = QPushButton("Set netlog Path")
+        netlog_btn.clicked.connect(self.netlog_path_dialog)
+        button_layout_2.addWidget(netlog_btn)
+
+        self.upcoming_cb = QCheckBox("Announce upcoming")
+        button_layout_2.addWidget(self.upcoming_cb)
+        self.upcoming_flag = True
+
+        self.reroute_cb = QCheckBox("Rerouting")
+        button_layout_2.addWidget(self.reroute_cb)
+
         self.RouteWidget = QTextEdit()
         self.RouteWidget.setFont(QFont("Verdana", 14))
         self.MessageWidget = QTextEdit()
@@ -95,8 +105,9 @@ class CopilotWidget(QWidget):
 
         try:
             if self.route_caching:
-                self.Speaker.say("Loading cache!")
-            self.systems = EliteSystemsList(caching=self.route_caching)
+                self.say("Loading cache!")
+            self.systems = EliteSystemsList(caching=self.route_caching,default_jump=self.default_jump_length)
+            self.systems.economic_routing = str(parent.settings.value("shortest_route",False)).lower() == "true"
             if self.route_caching:
                 if self.systems.pre_cache:
                     self.say("Done!!")
@@ -113,6 +124,7 @@ class CopilotWidget(QWidget):
         all_layout.addSpacing(10)
         all_layout.addWidget(QLabel("Route"))
         all_layout.addWidget(self.RouteWidget)
+        all_layout.addLayout(button_layout_2)
         all_layout.addSpacing(10)
         all_layout.addWidget(QLabel("Messages"))
         all_layout.addWidget(self.MessageWidget)
@@ -135,12 +147,20 @@ class CopilotWidget(QWidget):
         self.do_rerouting = True
 
     @property
+    def upcoming_flag(self):
+        return self.upcoming_cb.isChecked()
+
+    @property
     def do_rerouting(self):
         return self.reroute_cb.isChecked()
 
     @do_rerouting.setter
     def do_rerouting(self, bool):
         self.reroute_cb.setChecked(bool)
+
+    @upcoming_flag.setter
+    def upcoming_flag(self, bool):
+        self.upcoming_cb.setChecked(bool)
 
     # noinspection PyProtectedMember
     def _setup_watcher(self):
@@ -193,19 +213,24 @@ class CopilotWidget(QWidget):
         assert isinstance(sys, str)
 
         jump = self.Router.next_jump(sys)
-        self.Speaker.say('Next jump: ')
-        if 'arrived' in jump or " found" in jump:
-            self.Speaker.speak_now(jump)
-        else:
-            self.Speaker.speak_system(jump)
 
         if "not found" in jump.lower():
             if self.do_rerouting:
-                self.say("Rerouting!")
+                if sys in self.no_reroute_systems:
+                    self.say("In an unknown system, cannot reroute.")
+                    return
+                self.say("Not in a waypoint system. Rerouting!")
                 self.find_route(sys)
                 # make sure new jump announced!
                 self.new_system_callback(self.Watcher.last_system())
                 return
+
+        if 'arrived' in jump : #or " found" in jump
+            self.Speaker.speak_now(jump)
+        else:
+            self.say('Next jump: ')
+            self.Speaker.speak_system(jump)
+
 
         self.message(u'Next jump: {0:s}'.format(jump))
         self.reload_route_to_widget(notify=False)
@@ -213,19 +238,24 @@ class CopilotWidget(QWidget):
 
         if self.Router.route_complete():
             self.routing = False
-            self.Speaker.say('Routing complete!')
+            self.say('Routing complete!')
 
     def new_system_callback(self, system):
         self.next_jumps_time = time()
-        self.message('# Entering system %s!' % system)
+        self.message('# Entering system "%s"!' % system)
         if self.routing:
-            self.Speaker.announce_system(system)
+            self.Speaker.announce_system(system) #TODO - adapt to self.say() strategy
             QTimer().singleShot(NEXT_JUMP_WAIT_TIME, lambda: self.check_route(system))
-            target = self.Router.get_route()[-1]
+            current_route = self.Router.get_route()
+            target = current_route[-1]
             #distance = self.systems.distance_between(system, target)
             distance = self.remaining_route_length()
-            if distance:
-                self.Speaker.say("%d Light years until %s" % (distance, target))
+            if distance>0 and self.Router.system_in_route(system):
+                message = "%d Light years until %s" % (distance, target)
+                self.say(message)
+            else:
+                self.say("Remaining distance unknown.")
+                print "Not announcing distance %d from %s, not in %s" % (distance,system, str(current_route))
 
     def set_log_path(self, path):
         # self.message('Netlog path set to %s' % path)
@@ -259,7 +289,7 @@ class CopilotWidget(QWidget):
     def close(self, e):
         self.write_route()
         self.save_log()
-        self.say("Goodbye Commander!")
+        self.say("Goodbye Commander.")
         e.accept()
         super(CopilotWidget, self).close()
 
@@ -298,6 +328,7 @@ class CopilotWidget(QWidget):
     def say(self, text):
         if self.Speaker:
             self.Speaker.say(text)
+        self.message('"'+text+'"')
 
     def reverse_route(self):
         self.message("Reversing the router's current route")
@@ -332,6 +363,10 @@ class CopilotWidget(QWidget):
         QTimer().singleShot(15000, lambda: os.unlink("donate.html"))
 
     def speak_next_jumps(self):
+        # don't announce if checkbox unset
+        if not self.upcoming_flag:
+            return
+
         # don t announce upcoming jumps if we recently got somewhere
         t = time()
         time_since_jump = t - self.next_jumps_time
@@ -343,7 +378,7 @@ class CopilotWidget(QWidget):
         assert (isinstance(r, EliteRouter))
         jumps = r.remaining_route(UPCOMING_JUMPS_NO)
         if not r.route_complete():
-            self.Speaker.say("Upcoming jumps:")
+            self.say("Upcoming jumps:")
             for jump in jumps:
                 self.Speaker.speak_system(jump)
                 if jump != jumps[-1]:
@@ -366,6 +401,7 @@ class CopilotWidget(QWidget):
             del lines[-1]
 
         start = start_system or lines[0]
+        start = self.Router._undone(start)
 
         destination = lines[-1]
         try:
@@ -379,7 +415,8 @@ class CopilotWidget(QWidget):
             self.message("Couldn't find a route")
             return
 
-        params = (len(route), start, destination, self.systems.last_routing_jump_distance)
+        self.default_jump_length = self.systems.last_routing_jump_distance
+        params = (len(route), start, destination, self.default_jump_length)
         self.message("Route with %d steps from %s to %s with %.1f LY jump distance." % params)
 
         self.RouteWidget.setText("\n".join(route))
@@ -389,6 +426,14 @@ class CopilotWidget(QWidget):
         params = len(route), self.systems.route_length(route)
         if params[1] < 0:
             self.say("Couldn't find full route, sorry!")
+            print "start", start, "route", route
+            if "unknown" in route[0]:
+                self.no_reroute_systems.append(start)
+                print "Start system %s added to rerouting exclusion list" % start
+            if "unknown" in route[-1]:
+                self.no_reroute_systems.append(destination)
+                print "Destination system %s added to rerouting exclusion list" % destination
+
         else:
             self.say("Route found. %d steps, %.1f light years total!" % params)
             self.check_route()
@@ -429,6 +474,7 @@ class CopilotWindow(QMainWindow):
         self.settings.setValue("Hyphen_spelling", self.mainWidget.hyphen_spell)
         self.settings.setValue("Route_caching", self.mainWidget.route_caching)
         self.settings.setValue("LastRoute", self.get_route_text())
+        self.settings.setValue("Default_jump_length", self.mainWidget.default_jump_length)
 
     def get_route_text(self):
         return self.mainWidget.get_route_content()

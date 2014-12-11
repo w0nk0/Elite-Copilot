@@ -3,9 +3,11 @@ __author__ = 'nico'
 import json
 from math import sqrt
 
-PRE_CACHE_DIST = 35.0
+PRE_CACHE_DIST = 28.0
 DEFAULT_JUMP_LENGTH = 13.0
+ECONOMIC_ROUTING = True
 
+SYSTEMS_JSON_URL = 'https://github.com/SteveHodge/ed-systems/blob/master/systems.json?raw=true'
 
 class Coordinate:
     def __init__(self, vector):
@@ -41,7 +43,7 @@ class EliteSystem():
 
 
 class EliteSystemsList:
-    def __init__(self, filename="systems.json", caching=True):
+    def __init__(self, filename="systems.json", caching=True, default_jump=0):
         with open(filename, "rt") as f:
             data = f.read()
 
@@ -54,10 +56,13 @@ class EliteSystemsList:
         self.known_neighbors = {}  # dict of (system, range) -> list
         self.pre_cache = {}  # dict of {range :  {system: neighbors}, .. } caches
         self.pre_cache_lightyears = 0
-        self.last_routing_jump_distance = DEFAULT_JUMP_LENGTH
+        self.last_routing_jump_distance = default_jump or DEFAULT_JUMP_LENGTH
+
+        self.economic_routing = ECONOMIC_ROUTING
 
         if self.caching:
             self.fill_pre_cache()
+
 
     def system_from_name(self, system_name):
         """returns an EliteSystem()"""
@@ -71,44 +76,99 @@ class EliteSystemsList:
         return EliteSystem(system, Coordinate(self.coordinates[system]))
 
     def neighbors(self, system, max_distance):
+        """
+        :param system: base system
+        :param max_distance: jump distance
+        :return: dict of { system: coordinates }
+        """
         if self.caching:
             cached = self.known_neighbors.get((system, max_distance))
             if cached:
                 return cached
 
-        c_sys = Coordinate(self.coordinates[system])
+        distance_squared = max_distance * max_distance
+        base_coordinate = Coordinate(self.coordinates[system])
 
         result = dict()
         potential_neighbors = self.cached_neighbors(system, max_distance) or self.coordinates
 
-        for n, x in potential_neighbors.items():
-            # print x,
-            if n == system: continue
-            if c_sys.distance(Coordinate(x), False) < max_distance * max_distance:  #avoiding sqrt overhead
-                result[n] = x
-                #print x
+        for candidate_name, candidate_coord in potential_neighbors.items():
+            # Don't include reference system in neighbor list
+            if candidate_name == system:
+                continue
+
+            if base_coordinate.distance(Coordinate(candidate_coord), False) < distance_squared:  #avoiding sqrt overhead
+                result[candidate_name] = candidate_coord
+
+
         if self.caching:
             self.known_neighbors[(system, max_distance)] = result
         return result
 
     def neighbor_ranks(self, system, target, max_distance, ignore_systems):
-        matches = []
-        for n in self.neighbors(system, max_distance).items():
+        matches = [] #  array of (system, distance to target) tuples
+        try:
+            neighbor_list = self.neighbors(system, max_distance).items()
+        except Exception, err:
+            print "Error!", err
+            print "locals:", locals()
+            return [(0,0)]
+            
+        for n in neighbor_list:
             if n in ignore_systems:
                 continue
-            matches.append((n, Coordinate(n[1]).distance(Coordinate(self.coordinates[target]), False)))
+            target_coordinates = Coordinate(self.coordinates[target])
+            dist_to_target = Coordinate(n[1]).distance(target_coordinates, False)
+            matches.append((n, dist_to_target))
         matches.sort(key=lambda x: x[1])
         return matches
 
-    def route(self, a_start, a_target, max_distance=-1.0, verbose=True, avoid_systems=[]):
+    def econ_neighbor_ranks(self, system, target, max_distance, ignore_systems):
+        matches = [] #  array of (system, distance to target) tuples
+        try:
+            neighbor_list = self.neighbors(system, max_distance).items()
+        except Exception, err:
+            print "Error!", err
+            print "locals:", locals()
+            return [(0,0)]
 
+        start_coordinates = Coordinate(self.coordinates[system])
+        target_coordinates = Coordinate(self.coordinates[target])
+        start_dist_to_target = start_coordinates.distance(target_coordinates, False)
+
+        for n in neighbor_list:
+            if n in ignore_systems:
+                continue
+
+            dist_to_target = Coordinate(n[1]).distance(target_coordinates, False)
+            improvement = start_dist_to_target - dist_to_target
+            jump = Coordinate(n[1]).distance(start_coordinates, False)
+            #efficiency = dist_to_target / (improvement/(jump+2.0))*100
+            #efficiency = improvement
+            waste = -( improvement - jump)
+            efficiency = improvement - waste*2
+            efficiency = improvement*100.0 / (jump+2)
+            efficiency = -dist_to_target-jump
+
+            print n[0],": jump", jump, "improve", improvement, "waste", waste, "eff", efficiency
+            matches.append((n, dist_to_target, efficiency))
+
+        matches.sort(key=lambda x: -x[2]) # sort by efficiency
+        print "Top jump: ", matches[0]
+        return [(n[0],n[1]) for n in matches]
+
+    def route(self, a_start, a_target, max_distance=-1.0, verbose=True, avoid_systems=[]):
         if max_distance < 0 and self.last_routing_jump_distance:
             max_distance = self.last_routing_jump_distance
 
         self.last_routing_jump_distance = max_distance
-
         if max_distance < 0:
             return ["Max jump distance unknown!"]
+
+        neighbor_ranker = self.neighbor_ranks
+        if self.economic_routing:
+            neighbor_ranker = self.econ_neighbor_ranks
+            print "Economic routing: ON"
 
         start = self.guess_system_name(a_start)
         if not start in self.coordinates.keys():
@@ -129,25 +189,32 @@ class EliteSystemsList:
         closest_system = start
 
         while not current == target:
-            n = self.neighbor_ranks(current, target, max_distance, bad_steps)
+            # find eligible neighbors and sorts them
+            n = neighbor_ranker(current, target, max_distance, bad_steps)
             OK = lambda x: x not in bad_steps and x not in steps
             eligible = [node for node in n if OK(node[0][0])]
             n = eligible
+
+            # if no systems to jump to available
             if len(n) < 1:
                 print "FAIL at %s" % current
-                if failures < 5:
+                if failures < 20:
                     failures += 1
-                    print "No candidates, retracing a step"
+                    print "No candidates in %s, retracing a step" % current
                     print "route so far: ", steps
                     print "Bad steps:", bad_steps
                     bad_steps.append(current)
-                    del steps[-1]
-                    current = steps[-1]
+                    current = steps.pop()
+                    print "retraced to %s" % current
+                    continue
                 else:
                     steps.append("INCOMPLETE :(")
                     steps.append(target)
                     break
-            if len(n) == 0:
+
+            # if still no systems?
+            # TODO: DISABLED
+            if len(n) < 0: # DISABLED!! < 0
                 print "Giving up :("
                 steps.append("INCOMPLETE :(")
                 steps.append(target)
@@ -294,9 +361,9 @@ class EliteSystemsList:
             output.write(zipped)
         print "Done!"
 
+# TESTS
 def run(sys1="Sol", sys2="Bingo"):
     print EliteSystemsList().route(sys1, sys2, 14.0)
-
 
 def benchmark():
     import timeit

@@ -1,3 +1,23 @@
+V 0.18
+
+- Routing won't try to route from an unknown system more than once per session anymore
+- Optimization of routing instructions (no "LY until" for unknown systems and more)
+
+V 0.17 alpha2
+
+- fixed a bug that would make routing fail when a default jump distance was used from the .ini file
+  (it was being read as text instead of floating point number)
+
+
+V 0.17 alpha
+
+- Checkbox to turn off announcement of upcoming jumps
+- last jump distance is saved to the .ini file and will be used on next program start
+- Routing improved, should now find routes where it failed before (if possible at all, of course)
+  (Routing logic will now retrace steps in a more robust fashion)
+  If your maximum jump distance is low, this should help a lot
+- ATTENTION - Routing may be buggy, use previous version in case of problems!
+
 V 0.16
 
 - Dynamic rerouting! If you get lost (aka your current system is not in your route), you'll get a new route

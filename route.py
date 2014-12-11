@@ -47,6 +47,7 @@ class EliteRouter:
 
     @staticmethod
     def _undone(item):
+        assert(isinstance(item,basestring))
         item = item.replace("DONE: ", "")
         item = item.replace("done: ", "")
         return item
@@ -85,6 +86,11 @@ class EliteRouter:
         self.route = result
         #print "r route:", self.route
 
+    def system_in_route(self,system):
+        assert(isinstance(system,basestring))
+        system = self._undone(system).lower()
+        route = [self._undone(x).lower() for x in self.route]
+        return system in route
 
 def test():
     r = "A10-4,Beargk,Lave,Earth".split(",")

@@ -1,11 +1,11 @@
-SP_FAST = 130
-SP_SLOW = 95
+SP_FAST = 155
+SP_SLOW = 115
 
 import pyttsx
+import time
 
 from hyphenate import hyphenate_word
 from natospell import nato_spell
-
 
 class EliteTalker:
     def __init__(self, nato_spelling=False, hyphen_spelling=False, nato_max_len=7):
@@ -28,14 +28,30 @@ class EliteTalker:
         self.s.say(text)
         if not_now:
             return
-        self.flush()
+        return self.flush()
 
     def flush(self):
         if self.speaking:
-            print "Already speaking.."
-            return
+            print "Already speaking..",
+
+            # this isn't running in a thread! It will never succeed so disabling it
+
+            #counter = 5
+            # while counter and self.speaking:
+            #     print ".",
+            #     counter -= 1
+            #     time.sleep(0.1)
+            #     #self.s.stop()
+            if self.speaking:
+                print "stopping."
+                return False
+            #print "waited enough."
+
         self.speaking = True
-        self.s.runAndWait()
+        try:
+            self.s.runAndWait()
+        except RuntimeError:
+            print "Runtime Error while uttering speech"
         self.speaking = False
 
     def set_slow(self):

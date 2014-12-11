@@ -3,23 +3,21 @@ import route
 import pyttsx
 
 CFG_speak_entire_route = False
-SP_FAST = 140
-SP_SLOW = 98
 
-global speech
-speech = pyttsx.init()
+DEBUG_FLAG = False
 
 path = r"C:\_SSD_\Frontier\EDLaunch\Products\FORC-FDEV-D-1002\Logs"
 
 
 def debug(s):
-    return
+    if not DEBUG_FLAG:
+        return
     print(s)
 
 
 class LogWatcher:
-    def __init__(self, path):
-        self.path = path
+    def __init__(self, log_path):
+        self.path = log_path
         self.fn = None
         self._last_visited = None
         self._new_system = False
@@ -32,7 +30,7 @@ class LogWatcher:
 
     def last_system(self):
         result = self._last_visited or self._get_systems(self._read_log())[-1]
-        #print "Watcher->last_system:",result
+        # print "Watcher->last_system:",result
         return result
 
     def register_callback(self, func):
@@ -41,6 +39,7 @@ class LogWatcher:
 
     def _find_logfile(self):
         import os.path
+
         allfiles = []
         for entry in listdir(self.path):
             if entry.startswith(self.log_pattern):
@@ -58,14 +57,15 @@ class LogWatcher:
 
         :rtype : str
         """
-        log = ""
         fn = fn or self._find_logfile()
 
-        if not fn: return ""
+        if not fn:
+            print "No log file!"
+            return ""
 
         self._logfile = fn
         debug("Reading %s" % fn)
-        with open(fn,"rt") as f:
+        with open(fn, "rt") as f:
             log = f.read()
 
         return log
@@ -73,14 +73,15 @@ class LogWatcher:
     @staticmethod
     def _get_systems(logtxt):
         import re
+
         regex = re.compile(ur'System:\d+\((?P<System>.*?)\).*?Body:(?P<Body>\d+)')
-        systems=[]
-        bodies=[]
+        systems = []
+        bodies = []
         for system, body in regex.findall(logtxt):
             systems.append(system)
             bodies.append(body)
 
-        debug("Systems: "+str(systems))
+        debug("Systems: " + str(systems))
         return systems
 
     def _check_log(self):
@@ -91,8 +92,8 @@ class LogWatcher:
             return
 
         last_system = systems[-1]
-        #print "%d systems found in file %s: last_visited: %s" %(len(systems),self._logfile, self._last_visited)
-        print "Last system found in ..%s: %s" % (self._logfile[-14:], last_system)
+        # print "%d systems found in file %s: last_visited: %s" %(len(systems),self._logfile, self._last_visited)
+        debug("Last system found in ..%s: %s" % (self._logfile[-14:], last_system))
         if last_system == self._last_visited:
             return
 
@@ -106,102 +107,102 @@ class LogWatcher:
         self._check_log()
 
 
-#  OLD STUFF from pre-GUI
+        # OLD STUFF from pre-GUI
 
-# def system_speakify(txt):
-#     new_txt = ""
-#     counter = 0
-#     for c in txt:
-#         counter += 1
-#         new_txt += c
-#         if c in "0123456789" and counter % 2:
-#             new_txt += " "
-#         if c == "-":
-#             new_txt += "dash"
-#
-#     return new_txt
-#
-# def talker(txt):
-#     global speech
-#
-#     txt = system_speakify(txt)
-#     speech.setProperty("rate", SP_FAST)
-#     speech.say("Arrived in system ")
-#     speech.setProperty("rate", SP_SLOW)
-#     speech.say(txt+"!!")
-#     print "In system "+txt
-#     speech.runAndWait()
-#
-#
-#
-# def run():
-#     import time
-#     import route
-#     global speech
-#
-#     my_route = "Beargk,B7-6,B7-2,B7-1,B7-4,Nithhogg,101806,Hayanzib,Vish,Grana,Aguano,B7-1".split(",")
-#     my_route=[]
-#
-#     speech.setProperty("rate", SP_FAST)
-#
-#     with open("route.txt","rt") as rf:
-#         my_route = rf.readlines()
-#         speech.say("Read route from route.txt")
-#
-#     speech.say("Starting to monitor")
-#     speech.runAndWait()
-#
-#     r = route.EliteRouter(my_route)
-#     w = LogWatcher(path)
-#     #w.register_callback(lambda x: debug("\n\n## NEW SYSTEM ## "+x))
-#     w.register_callback(talker)
-#     runs = 0
-#     routing = True
-#
-#
-#     while routing:
-#         time.sleep(10)
-#
-#         w.check()
-#
-#         if w.new_system():
-#             runs = 1
-#             time.sleep(10)
-#             sys = w.last_system()
-#             jump = r.next_jump(sys)
-#             if r.route_complete():
-#                 routing = False
-#
-#             speech.setProperty("rate", SP_FAST)
-#             speech.say("Next jump: ")
-#             speech.setProperty("rate", SP_SLOW)
-#             speech.say(system_speakify(jump)+"!!")
-#             speech.runAndWait()
-#
-#             print "Route:",
-#             print r.route
-#
-#         if not runs % 6:
-#             rem = r.remaining_route(2)
-#             if rem:
-#                 speech.setProperty("rate", SP_FAST)
-#                 speech.say("Next stops: ")
-#                 speech.setProperty("rate", SP_SLOW)
-#                 speech.say(system_speakify(rem))
-#                 speech.runAndWait()
-#
-#         if CFG_speak_entire_route and runs % 18 == 0:
-#             rem = r.remaining_route()
-#             if rem:
-#                 speech.say("Next stops: "+system_speakify(rem))
-#                 speech.runAndWait()
-#
-#         runs += 1
-#
-#     speech.setProperty("rate", SP_FAST)
-#     speech.say("Routing finished! Exiting!")
-#     speech.runAndWait()
-#
-#
-# if __name__ == "__main__":
-#     run()
+        # def system_speakify(txt):
+        # new_txt = ""
+        # counter = 0
+        # for c in txt:
+        # counter += 1
+        #         new_txt += c
+        #         if c in "0123456789" and counter % 2:
+        #             new_txt += " "
+        #         if c == "-":
+        #             new_txt += "dash"
+        #
+        #     return new_txt
+        #
+        # def talker(txt):
+        #     global speech
+        #
+        #     txt = system_speakify(txt)
+        #     speech.setProperty("rate", SP_FAST)
+        #     speech.say("Arrived in system ")
+        #     speech.setProperty("rate", SP_SLOW)
+        #     speech.say(txt+"!!")
+        #     print "In system "+txt
+        #     speech.runAndWait()
+        #
+        #
+        #
+        # def run():
+        #     import time
+        #     import route
+        #     global speech
+        #
+        #     my_route = "Beargk,B7-6,B7-2,B7-1,B7-4,Nithhogg,101806,Hayanzib,Vish,Grana,Aguano,B7-1".split(",")
+        #     my_route=[]
+        #
+        #     speech.setProperty("rate", SP_FAST)
+        #
+        #     with open("route.txt","rt") as rf:
+        #         my_route = rf.readlines()
+        #         speech.say("Read route from route.txt")
+        #
+        #     speech.say("Starting to monitor")
+        #     speech.runAndWait()
+        #
+        #     r = route.EliteRouter(my_route)
+        #     w = LogWatcher(path)
+        #     #w.register_callback(lambda x: debug("\n\n## NEW SYSTEM ## "+x))
+        #     w.register_callback(talker)
+        #     runs = 0
+        #     routing = True
+        #
+        #
+        #     while routing:
+        #         time.sleep(10)
+        #
+        #         w.check()
+        #
+        #         if w.new_system():
+        #             runs = 1
+        #             time.sleep(10)
+        #             sys = w.last_system()
+        #             jump = r.next_jump(sys)
+        #             if r.route_complete():
+        #                 routing = False
+        #
+        #             speech.setProperty("rate", SP_FAST)
+        #             speech.say("Next jump: ")
+        #             speech.setProperty("rate", SP_SLOW)
+        #             speech.say(system_speakify(jump)+"!!")
+        #             speech.runAndWait()
+        #
+        #             print "Route:",
+        #             print r.route
+        #
+        #         if not runs % 6:
+        #             rem = r.remaining_route(2)
+        #             if rem:
+        #                 speech.setProperty("rate", SP_FAST)
+        #                 speech.say("Next stops: ")
+        #                 speech.setProperty("rate", SP_SLOW)
+        #                 speech.say(system_speakify(rem))
+        #                 speech.runAndWait()
+        #
+        #         if CFG_speak_entire_route and runs % 18 == 0:
+        #             rem = r.remaining_route()
+        #             if rem:
+        #                 speech.say("Next stops: "+system_speakify(rem))
+        #                 speech.runAndWait()
+        #
+        #         runs += 1
+        #
+        #     speech.setProperty("rate", SP_FAST)
+        #     speech.say("Routing finished! Exiting!")
+        #     speech.runAndWait()
+        #
+        #
+        # if __name__ == "__main__":
+        #     run()
