@@ -1,3 +1,16 @@
+V 0.19
+
+- First version that works around the information about the current system not in netlog.log anymore
+- Three hot key - triggered functions are available to do so. 
+  You can set those in the elite-copilot.ini and trigger them via Voice Attack, they don't need the app to be in focus 
+  - Hotkey_1 (default F20): Confirm you have jumped to the next waypoint in the route
+  - Hotkey_2 (default F21): List alternate jumps in case you can't jump to the current waypoint
+    (e.g. because of the "incomplete jump target list" bug)
+  - Hotkey_3 (default F22): Avoid next waypoint: Make a new route that ignores the next waypoint
+    (e.g. because you don't have permission to enter that system)
+	
+- I'd be happy to hear your feedback. I realize this is far worse than it was before. Sorry.
+
 V 0.18
 
 - Routing won't try to route from an unknown system more than once per session anymore

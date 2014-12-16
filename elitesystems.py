@@ -63,7 +63,6 @@ class EliteSystemsList:
         if self.caching:
             self.fill_pre_cache()
 
-
     def system_from_name(self, system_name):
         """returns an EliteSystem()"""
         system = self.guess_system_name(system_name)
@@ -149,7 +148,7 @@ class EliteSystemsList:
             efficiency = improvement - waste*2
             efficiency = improvement*100.0 / (jump+2)
             efficiency = -dist_to_target-jump
-
+            efficiency = -waste
             print n[0],": jump", jump, "improve", improvement, "waste", waste, "eff", efficiency
             matches.append((n, dist_to_target, efficiency))
 

@@ -24,6 +24,7 @@ class LogWatcher:
         self.callback = None
         self.log_pattern = "netLog"
         self.logfile = ""
+        self.fake_mode = True
 
     def new_system(self):
         return self._new_system
@@ -70,8 +71,10 @@ class LogWatcher:
 
         return log
 
-    @staticmethod
-    def _get_systems(logtxt):
+    def _get_systems(self,logtxt):
+        if self.fake_mode:
+            return [self._last_visited]
+
         import re
 
         regex = re.compile(ur'System:\d+\((?P<System>.*?)\).*?Body:(?P<Body>\d+)')
@@ -83,6 +86,11 @@ class LogWatcher:
 
         debug("Systems: " + str(systems))
         return systems
+
+    def fake_system(self, system_name):
+        self._last_visited = system_name
+        self._new_system = system_name
+        self.fake_mode = True
 
     def _check_log(self):
         log = self._read_log()
