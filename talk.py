@@ -1,5 +1,5 @@
-SP_FAST = 155
-SP_SLOW = 115
+SP_FAST = 175
+SP_SLOW = 125
 
 import pyttsx
 import time
@@ -7,36 +7,57 @@ import time
 from hyphenate import hyphenate_word
 from natospell import nato_spell
 
-import speechsettings
+import ConfigParser
+
 
 class EliteTalker:
     def __init__(self, nato_spelling=False, hyphen_spelling=False, nato_max_len=7):
         self.speech = self.s = pyttsx.init()
+        self.FAST = SP_FAST
+        self.SLOW = SP_SLOW
+
         self.speaking = False
         self.set_normal()
         self.nato = nato_spelling
         self.nato_max_length = nato_max_len
         self.hyphen = hyphen_spelling
+        self.read_ini()
+        self.set_normal()
 
+    def set_voice(self, voice_id = None, voice_number=None):
         print "Available voices:"
         voices = self.s.getProperty("voices")
         for v in voices:
             print "Name: %-15s - ID: %60s " % (v.name, v.id)
 
         try:
-            if speechsettings.voice_id != None:
-                self.s.setProperty("voice",speechsettings.voice_id)
-                print "Setting voice to ", speechsettings.voice_id
-            if speechsettings.voice_number != None:
-                self.set_voice_number(speechsettings.voice_number)
-        except:
+            if voice_id:
+                self.s.setProperty("voice",voice_id)
+                print "Setting voice to ", voice_id
+            if voice_number:
+                self.set_voice_number(voice_number)
+        except Exception,e:
             print "Error setting the voice!"
+            print e
+            print locals()
+
+    def read_ini(self):
+        try:
+            p = ConfigParser.ConfigParser()
+            p.read("speech.ini")
+            voice = p.getint("Voice","id")
+            self.set_voice(voice_number=voice)
+            self.FAST = p.getint("Voice","speed_fast") or SP_FAST
+            self.SLOW = p.getint("Voice","speed_slow") or SP_SLOW
+        except Exception,e:
+            print "Couldn't read speech.ini"
+            print e
+            print locals()
 
     def set_voice_number(self, voice_number):
         voices = self.s.getProperty("voices")
         self.s.setProperty("voice",voices[voice_number].id)
         print "Setting voice to ", voices[voice_number].id
-
 
     def say(self, text):
         """Just a shorthand for speak()"""
@@ -47,6 +68,8 @@ class EliteTalker:
         return self.flush()
 
     def speak(self, text, not_now=False):
+        if "next jump" in text or "entering" in text:
+            text = self._numbers_speakify(text)
         self.s.say(text)
         if not_now:
             return
@@ -83,7 +106,7 @@ class EliteTalker:
         self.speech.setProperty("rate", SP_SLOW)
 
     def set_normal(self):
-        self.speech.setProperty("rate", SP_FAST)
+        self.speech.setProperty("rate", int((self.FAST*3+self.SLOW*2) / 5))
 
     def speak_system(self, system):
 
@@ -92,7 +115,7 @@ class EliteTalker:
 
         if self.hyphen==True:
             #print "##DEBUG Hyphen speaking"
-            sys = self._system_speakify(system)
+            sys = self._numbers_speakify(system)
             sys = " ".join(hyphenate_word(sys))
 
         if self.nato==True:
@@ -116,14 +139,18 @@ class EliteTalker:
         self.set_normal()
 
     @staticmethod
-    def _system_speakify(txt):
+    def _numbers_speakify(txt):
         new_txt = ""
         counter = 0
         for c in txt:
-            counter += 1
             new_txt += c
-            if c in "0123456789" and counter % 2:
-                new_txt += " "
+            if c in "0123456789":
+                counter += 1
+                if counter > 1:
+                    new_txt += " "
+                    counter = 0
+            else:
+                counter = 0
             if c == "-":
                 new_txt += "dash"
 

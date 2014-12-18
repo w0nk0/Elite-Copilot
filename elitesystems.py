@@ -153,7 +153,10 @@ class EliteSystemsList:
             matches.append((n, dist_to_target, efficiency))
 
         matches.sort(key=lambda x: -x[2]) # sort by efficiency
-        print "Top jump: ", matches[0]
+        if matches:
+            print "Top jump: ", matches[0]
+        else:
+            print "No matches in eco_neighbor_ranks :("
         return [(n[0],n[1]) for n in matches]
 
     def route(self, a_start, a_target, max_distance=-1.0, verbose=True, avoid_systems=[]):

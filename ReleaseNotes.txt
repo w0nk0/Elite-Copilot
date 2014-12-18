@@ -1,3 +1,15 @@
+V 0.21
+
+- Added checkbox for "Economy routing", making routing logic  prefer shorter, more direct jumps
+- cleaned up the interface to adjust to new functionality
+- speech.ini supports setting the speed of speech (see in the file)
+
+V  0.20
+
+- Speech.ini to set a Voice ID if multiple voices are installed on the sytem (e.g. Ivona, ..)
+- Restyling the window to a dark background for less immersion breaking and better Rift readability
+- Routing and announcements right after program start with less hiccups
+
 V 0.19
 
 - First version that works around the information about the current system not in netlog.log anymore
