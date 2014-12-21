@@ -206,7 +206,11 @@ class EliteSystemsList:
                     print "route so far: ", steps
                     print "Bad steps:", bad_steps
                     bad_steps.append(current)
-                    current = steps.pop()
+                    try:
+                        current = steps.pop()
+                    except IndexError:
+                        failures += 1
+                        continue
                     print "retraced to %s" % current
                     continue
                 else:

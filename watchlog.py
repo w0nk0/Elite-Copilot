@@ -1,6 +1,7 @@
 from os import listdir
 import route
 import pyttsx
+from os.path import exists
 
 CFG_speak_entire_route = False
 
@@ -25,6 +26,18 @@ class LogWatcher:
         self.log_pattern = "netLog"
         self.logfile = ""
         self.fake_mode = True
+
+    def is_logging_active(self):
+        config_path = self.path+"/../"
+        config_file = config_path + "AppConfig.xml"
+        print config_file,
+        #ok = exists(config_file)
+        ok = False
+        with open(config_file,"rt") as f:
+            txt=f.read()
+            ok = 'VerboseLogging="1"' in txt
+        print ": ", ok
+        return ok
 
     def new_system(self):
         return self._new_system
@@ -72,7 +85,7 @@ class LogWatcher:
         return log
 
     def _get_systems(self,logtxt):
-        if self.fake_mode:
+        if self.fake_mode and not "Body:" in logtxt:
             return [self._last_visited]
 
         import re

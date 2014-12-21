@@ -1,3 +1,9 @@
+V 0.25
+
+- Automatic jump detection works again! Thank you, /u/TheShandyMan for the hint
+- Standard hotkeyed command changed to F20: Repeat next jump (see V0.19 notes below for more info)
+  (The elite-copilot.ini file in which you can set them will be generated the first time you exit the app if you don't have it yet)
+  
 V 0.21
 
 - Added checkbox for "Economy routing", making routing logic  prefer shorter, more direct jumps

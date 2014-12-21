@@ -1,5 +1,5 @@
-SP_FAST = 175
-SP_SLOW = 125
+SP_FAST = 150
+SP_SLOW = 100
 
 import pyttsx
 import time
@@ -106,7 +106,8 @@ class EliteTalker:
         self.speech.setProperty("rate", SP_SLOW)
 
     def set_normal(self):
-        self.speech.setProperty("rate", int((self.FAST*3+self.SLOW*2) / 5))
+        #self.speech.setProperty("rate", int((self.FAST*5+self.SLOW*1) / 6))
+        self.speech.setProperty("rate", self.FAST)
 
     def speak_system(self, system):
 

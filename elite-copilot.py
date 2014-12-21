@@ -2,7 +2,7 @@ from mechanize._form import _AbstractBSFormParser
 
 __author__ = 'nico'
 APPNAME = 'Elite-Copilot'
-APPVERSION = '0.21'
+APPVERSION = '0.25'
 
 CHECK_TIME = 10000
 REPEAT_NEXT_JUMPS_TIME = 45000
@@ -172,16 +172,16 @@ class CopilotWidget(QWidget):
 
         netlog_btn = QPushButton("Set netlog Path")
         netlog_btn.clicked.connect(self.netlog_path_dialog)
-        netlog_btn.setEnabled(False)
-        #button_layout_2.addWidget(netlog_btn)
-
+        #netlog_btn.setEnabled(False)
+        button_layout_2.addWidget(netlog_btn)
+        button_layout_2.addSpacing(50)
         self.upcoming_cb = QCheckBox("Announce upcoming")
         button_layout_2.addWidget(self.upcoming_cb)
         self.upcoming_flag = True
 
         self.reroute_cb = QCheckBox("Rerouting")
         button_layout_2.addWidget(self.reroute_cb)
-        self.do_rerouting = False
+        self.do_rerouting = True
 
         self.econ_routing_cb = QCheckBox("Save fuel")
         button_layout_2.addWidget(self.econ_routing_cb)
@@ -210,7 +210,7 @@ class CopilotWidget(QWidget):
         pal = QPalette()
         pal.setColor(QPalette.Base,QColor("Black"))
         w.setPalette(pal)
-        w.setTextColor(QColor("blue"))
+        w.setTextColor(QColor(30,30,200))
         w.setTextBackgroundColor(QColor("black"))
 
         try:
@@ -231,14 +231,14 @@ class CopilotWidget(QWidget):
                 "You need the systems.json file for routing, please download it from where you got this program from.")
             msg.exec_()
 
-        all_layout.addLayout(button_layout)
+        all_layout.addLayout(button_layout,0)
         all_layout.addSpacing(10)
         all_layout.addWidget(QLabel("Route"))
-        all_layout.addWidget(self.RouteWidget)
-        all_layout.addLayout(button_layout_2)
+        all_layout.addWidget(self.RouteWidget,2)
+        all_layout.addLayout(button_layout_2,0)
         all_layout.addSpacing(10)
-        all_layout.addWidget(QLabel("Messages"))
-        all_layout.addWidget(self.MessageWidget)
+        all_layout.addWidget(QLabel("Messages"),0)
+        all_layout.addWidget(self.MessageWidget,1)
 
         self.setLayout(all_layout)
 
@@ -253,7 +253,8 @@ class CopilotWidget(QWidget):
         self._setup_watcher()
         self._setup_upcoming()
 
-        self.fill_first_system() # needs Watcher to be set up
+        if self.Watcher:
+            self.fill_first_system() # needs Watcher to be set up
 
 
     def fill_first_system(self):
@@ -272,7 +273,7 @@ class CopilotWidget(QWidget):
 
     def setup_hook(self):
         global global_hotkey_func_1
-        global_hotkey_func_1 = self.confirm_jump
+        global_hotkey_func_1 = self.repeat_jump
 
         global global_hotkey_func_2
         global_hotkey_func_2 = self.next_best_jumps
@@ -326,11 +327,19 @@ class CopilotWidget(QWidget):
         """Sets up the Watcher, needs self.log_path to be set"""
         if not self.log_path:
             self.message('No netlog-path set. Please navigate to your E:D\'s Logs folder with the button above!')
-            QTimer().singleShot(5000, lambda: self._setup_watcher())
+            self.say("No net log path set")
+            QTimer().singleShot(15000, lambda: self._setup_watcher())
             return False
 
         self.Watcher = LogWatcher(self.log_path)
         self.Watcher.register_callback(self.new_system_callback)
+
+        if not self.Watcher.is_logging_active():
+            message = "Verbose logging is not actice in your AppConfig.xml file.\nElite Copilot can't know where you're going. :("
+            message += '\n\nPlease put a VerboseLogging="1" entry in the Network section of AppConfig.xml in your E:D directory'
+            mb = QMessageBox()
+            mb.setText(message)
+            mb.exec_()
 
         self.watch_log_timer = QTimer(self)
         self.connect(self.watch_log_timer, SIGNAL("timeout()"), self.check_netlog)
@@ -381,7 +390,7 @@ class CopilotWidget(QWidget):
                 if sys in self.no_reroute_systems:
                     self.say("In an unknown system, cannot reroute.")
                     return
-                self.say("Not in a waypoint system. Rerouting!")
+                self.say("Not in a waypoint system.")
                 self.find_route(sys)
                 # make sure new jump announced!
                 self.new_system_callback(self.Watcher.last_system())
@@ -393,7 +402,7 @@ class CopilotWidget(QWidget):
             self.say('Next jump: ')
             try:
                 dist = self.systems.distance_between(sys, jump)
-                self.say("%d lightyears to " % dist)
+                self.say("%d light years to " % dist)
                 self.Speaker.speak_system(jump)
             except Exception:
                 print locals()
@@ -550,7 +559,7 @@ class CopilotWidget(QWidget):
             prev = self.Watcher.last_system()
             for jump in jumps:
                 dist = self.systems.distance_between(prev, jump)
-                self.say("%d lightyears to " % int(dist))
+                self.say("%d light years to " % int(dist))
                 self.Speaker.speak_system(jump)
                 prev = jump
 
@@ -565,6 +574,7 @@ class CopilotWidget(QWidget):
 
     def find_route(self, start_system=None):
         self.routing = False
+        self.say("Routing..")
         self.message("\nThis will try to map a route from the first line in the route window")
         self.message("using the jump distance in light years in the second line")
         self.message("to the last line in the route window. It's very simple and may fail.\n")
@@ -610,7 +620,7 @@ class CopilotWidget(QWidget):
                 print "Destination system %s added to rerouting exclusion list" % destination
 
         else:
-            self.say("Route found. %d steps, %.1f light years total!" % params)
+            self.say("Route found. %d steps, %.0f light years total." % params)
             self.confirm_jump(start)
             self.check_route()
             # self.message(",".join(route))
@@ -668,6 +678,16 @@ class CopilotWidget(QWidget):
         if not spoken:
             self.say("Sorry, no alternatives found.")
 
+    def repeat_jump(self):
+        r = self.Router
+        s = self.systems
+        start = s.guess_system_name(self.Watcher.last_system(), True)
+        route = r.remaining_route(99)
+        target = s.guess_system_name(route[0])
+        dist = s.distance_between(start, target)
+        self.say("Please jump %d light years to %s" % (dist,target))
+
+
     def avoid_next_jump(self):
         next_jump = self.Router.remaining_route(1)[0]
         self.say("Avoiding %s" % next_jump)
@@ -706,7 +726,8 @@ class CopilotWindow(QMainWindow):
         #w.setTextColor(QColor("green"))
         #w.setTextBackgroundColor(QColor("black"))
 
-
+        self.setWindowFlags(Qt.MSWindowsFixedSizeDialogHint)
+        #self.setWindowFlags(Qt.SplashScreen)
         self.netlog_path = ""
 
         self.initialize()
