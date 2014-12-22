@@ -1,8 +1,6 @@
-from mechanize._form import _AbstractBSFormParser
-
-__author__ = 'nico'
+__author__ = 'w0nk0'
 APPNAME = 'Elite-Copilot'
-APPVERSION = '0.25'
+APPVERSION = '0.26'
 
 CHECK_TIME = 10000
 REPEAT_NEXT_JUMPS_TIME = 45000
@@ -12,7 +10,7 @@ UPCOMING_ANNOUNCE_BLOCK_TIME = 30
 
 NATOSPELL = 'True'
 HYPHENSPELL = 'False'
-ROUTE_CACHING = "True"
+ROUTE_CACHING = "False"
 
 _HELP = ("\n"
          "HELP\n"
@@ -124,6 +122,7 @@ class CopilotWidget(QWidget):
         self.no_reroute_systems = []
         self.bad_systems = []  # systems to avoid when routing
         self.hotkey_hook = None
+        self.searching_route = False
 
         self.verbose = (parent.settings.value("Verbose", "False").lower() == "true")
         self.nato_spell = (parent.settings.value("Nato_spelling", NATOSPELL).lower() == "true")
@@ -177,7 +176,7 @@ class CopilotWidget(QWidget):
         button_layout_2.addSpacing(50)
         self.upcoming_cb = QCheckBox("Announce upcoming")
         button_layout_2.addWidget(self.upcoming_cb)
-        self.upcoming_flag = True
+        self.upcoming_flag = False # not default anymore because jump detection is back!
 
         self.reroute_cb = QCheckBox("Rerouting")
         button_layout_2.addWidget(self.reroute_cb)
@@ -393,7 +392,7 @@ class CopilotWidget(QWidget):
                 self.say("Not in a waypoint system.")
                 self.find_route(sys)
                 # make sure new jump announced!
-                self.new_system_callback(self.Watcher.last_system())
+                #self.new_system_callback(self.Watcher.last_system())
                 return
 
         if 'arrived' in jump:  # or " found" in jump
@@ -404,6 +403,7 @@ class CopilotWidget(QWidget):
                 dist = self.systems.distance_between(sys, jump)
                 self.say("%d light years to " % dist)
                 self.Speaker.speak_system(jump)
+                self.message("-> "+str(jump))
             except Exception:
                 print locals()
                 raise
@@ -573,7 +573,14 @@ class CopilotWidget(QWidget):
         print "Log path set to ", logpath
 
     def find_route(self, start_system=None):
+        print "searching currently:", str(self.searching_route)
+        if self.searching_route:
+            self.message("Already routing, wait a moment please.")
+            self.say("Still busy finding a route, one moment please.")
+            return
+
         self.routing = False
+        self.searching_route = True
         self.say("Routing..")
         self.message("\nThis will try to map a route from the first line in the route window")
         self.message("using the jump distance in light years in the second line")
@@ -593,11 +600,14 @@ class CopilotWidget(QWidget):
             self.message("No floating point found in second line, using default")
             drive = -1
 
-        self.systems.economic_routing = self.econ_routing
+        self.systems.economic_routing = self.do_econ_routing
 
         route = self.systems.route(start, destination, drive, avoid_systems=self.bad_systems)
+
+        self.searching_route = False
         if not route:
             self.message("Couldn't find a route")
+            self.searching_route = False
             return
 
         self.default_jump_length = self.systems.last_routing_jump_distance
@@ -610,7 +620,7 @@ class CopilotWidget(QWidget):
 
         params = len(route), self.systems.route_length(route)
         if params[1] < 0:
-            self.say("Couldn't find full route, sorry!")
+            self.say("No route found, you might need to upgrade your jump drive.")
             print "start", start, "route", route
             if "unknown" in route[0]:
                 self.no_reroute_systems.append(start)
@@ -620,10 +630,13 @@ class CopilotWidget(QWidget):
                 print "Destination system %s added to rerouting exclusion list" % destination
 
         else:
-            self.say("Route found. %d steps, %.0f light years total." % params)
-            self.confirm_jump(start)
+            self.say("Route found. %d steps, %d light years total." % params)
+            #self.confirm_jump(start)
             self.check_route()
             # self.message(",".join(route))
+
+        self.searching_route = False
+
 
     def remaining_route_length(self):
         route = self.Router.remaining_route()

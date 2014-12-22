@@ -1,3 +1,14 @@
+V 0.26
+
+- fuel-saving routing now works as intended, it prefers routes that only take around 70% of the max
+  jump distance, but factoring in efficiency (jump distance "wasted" by not doing towards
+  the final destination) as well
+- fixed a bug that would have the app calculate fuel-saving routes initially even if the checkbox wasn't set
+
+V 0.25a
+
+- fixed an error from manual jump detection that would lead to an infinite rerouting loop 
+
 V 0.25
 
 - Automatic jump detection works again! Thank you, /u/TheShandyMan for the hint

@@ -135,21 +135,34 @@ class EliteSystemsList:
         target_coordinates = Coordinate(self.coordinates[target])
         start_dist_to_target = start_coordinates.distance(target_coordinates, False)
 
+        print "Max_Dist:", max_distance
+
         for n in neighbor_list:
             if n in ignore_systems:
                 continue
 
             dist_to_target = Coordinate(n[1]).distance(target_coordinates, False)
-            improvement = start_dist_to_target - dist_to_target
-            jump = Coordinate(n[1]).distance(start_coordinates, False)
+            improvement = sqrt(start_dist_to_target) - sqrt(dist_to_target)
+            jump = sqrt(Coordinate(n[1]).distance(start_coordinates, False))
             #efficiency = dist_to_target / (improvement/(jump+2.0))*100
             #efficiency = improvement
             waste = -( improvement - jump)
             efficiency = improvement - waste*2
             efficiency = improvement*100.0 / (jump+2)
             efficiency = -dist_to_target-jump
-            efficiency = -waste
-            print n[0],": jump", jump, "improve", improvement, "waste", waste, "eff", efficiency
+            # fuel_usage = pow(max(jump,max_distance*0.6),1.5)-jump
+            fuel_usage = jump
+            if jump > max_distance*0.70:
+                fuel_usage += pow(jump-max_distance*0.70,2)
+            if jump > max_distance *0.7:
+                fuel_adjust = pow(jump-max(jump,max_distance*0.7),2)
+                waste += fuel_adjust
+            efficiency = -waste   #-fuel_usage
+            efficiency = improvement-waste - fuel_usage/2
+            efficiency = improvement / (fuel_usage+2) * 100
+            if improvement > -1:
+                print "%18s: jump %6.1f / closer: %6.1f / wasted: %6.1f / eff: %6.1f " % (n[0],jump, improvement, waste,efficiency),
+                print "Fuel usage: %6.1f " % fuel_usage
             matches.append((n, dist_to_target, efficiency))
 
         matches.sort(key=lambda x: -x[2]) # sort by efficiency
@@ -229,7 +242,8 @@ class EliteSystemsList:
             # print closest
             if verbose: print "%20s " % current + " --> ",
             current = closest[0][0]
-            if verbose: print "%20s " % current + " remaining: %5.1f LY" % sqrt(closest[1])  # sqrt optimization
+
+            if verbose: print "%20s " % current + " remaining: %5.1f LY " % (sqrt(closest[1]))  # sqrt optimization
 
             if closest[1] < lowest_dist:
                 lowest_dist = closest[1]
