@@ -63,6 +63,9 @@ class EliteSystemsList:
         if self.caching:
             self.fill_pre_cache()
 
+    def all_system_names(self):
+        return self.coordinates.keys()
+
     def system_from_name(self, system_name):
         """returns an EliteSystem()"""
         system = self.guess_system_name(system_name)
@@ -316,7 +319,8 @@ class EliteSystemsList:
         return s.distance(t)
 
     @staticmethod
-    def cache_filename(max_jump, filename="neighbor-cache"):
+    def cache_filename(max_jump = 0, filename="neighbor-cache"):
+        max_jump = max_jump or PRE_CACHE_DIST
         return "%s-%0.1fLY-dump.z" % (filename, max_jump)
 
     def fill_pre_cache(self):
@@ -346,13 +350,13 @@ class EliteSystemsList:
             return None
         return self.pre_cache.get(system, None)
 
-    def write_pre_cache(self, max_jump):
+    def write_pre_cache(self, max_jump=None):
         """
         sets self.pre_cache to { system: [neighbor1, ..] } dict
         sets self.pre_cache_lightyears to the size of the inclusion bubble around each system
         :return: len of pre-cache
         """
-        distance = PRE_CACHE_DIST
+        distance = max_jump or PRE_CACHE_DIST
 
         all_neighbors = {}
 
@@ -375,7 +379,7 @@ class EliteSystemsList:
         from pickle import dumps
         import zlib
 
-        with open(self.cache_filename(max_jump), "wb") as output:
+        with open(self.cache_filename(int(distance)), "wb") as output:
             text = dumps(all_neighbors, 1)
             zipped = zlib.compress(text)
             output.write(zipped)
@@ -398,7 +402,7 @@ import sys
 
 
 def make_cache():
-    EliteSystemsList().write_pre_cache(35.0)
+    EliteSystemsList().write_pre_cache(PRE_CACHE_DIST)
 
 
 if __name__ == "__main__":
