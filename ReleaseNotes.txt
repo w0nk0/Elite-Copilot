@@ -1,10 +1,36 @@
+V 0.29
+
+- Jump logs now have a timestamp in your local time
+
+- The Copilot will now speak with the first non-Microsoft voice installed in your system
+  if you don't have a speech.ini file
+
+- Most speech should be a lot more continous now (but also faster). Download and change speech.ini if you think it's too fast, and le me know what you think!
+
+- Length of the route announced should not include the starting system anymore now, but the actual number of jumps required
+
+- Probably fixed a bug where buttons would be black on some systems
+
+- Might have fixed a  bug with jump distance being too long when entering a distance without decimal point
+
+V 0.28
+
+- New button "Jump log" that will compile and open a log of your previous jumps in notepad
+  (Those were, and are still, logged along with all messages in elite-copilot.log)
+  There are intermittent timestamps that are written from each time E:Copilot was closed, so you have some reference
+  
+- Slight rearrangement of UI buttons
+
+- Fixed a bug that would lead to routing to stay "in progress" and halt the app when you are not in a waypoint system and
+  rerouting was disabled.
+
 V 0.27
 
 - Selection of From/To systems for route planning via a drop-down-box and changed message accordingly
 
 - Different handling of routing cache, it will always load a cache file on startup if it finds one. This will make startup about
-  one second longer but speeds up route finding substantially (~3-4x as fast( on longer routes. You need the
-  neighbor-cache-28.0LY-dump file for this to work. If it's not present, the app will still run as before.
+one second longer but speeds up route finding substantially (~3-4x as fast( on longer routes. You need the
+neighbor-cache-28.0LY-dump file for this to work. If it's not present, the app will still run as before.
 
 - Routing in "save fuel" mode will announce doing so
 
@@ -13,11 +39,10 @@ V 0.27
 - "Alternate Jumps" command will now look for jumps of at most 14 LY to work around the "incomplete jump list" bug in E:D
 
 - Ability to set the window to a standard, resizable format via an (undocumented for now) .ini-setting. This won't be standard
-  for now since it leads to thicker window borders which I find to hurt immersion. 
-  ####  Ini setting is: Resizable_window=True ###
+for now since it leads to thicker window borders which I find to hurt immersion.
+#### Ini setting is: Resizable_window=True ###
 
 - Brighter blue text in the messages (lower) window for better readability
-
 
 V 0.26
 

@@ -70,7 +70,7 @@ class EliteSystemsList:
         """returns an EliteSystem()"""
         system = self.guess_system_name(system_name)
         if not system:
-            system = elitesystems.guess_system_name(system_name, guess_partial=True)
+            system = self.guess_system_name(system_name, guess_partial=True)
             print "Guessing you mean %s ?" % system
         if not system:
             return None
@@ -386,8 +386,10 @@ class EliteSystemsList:
         print "Done!"
 
 # TESTS
+
 def run(sys1="Sol", sys2="Bingo"):
     print EliteSystemsList().route(sys1, sys2, 14.0)
+
 
 def benchmark():
     import timeit
@@ -398,8 +400,59 @@ def benchmark():
     print "WIth cache:", timeit.timeit(lambda: e2.route("sol", "Aiabiko", 14.0, False), number=100)
 
 
-import sys
+def read_jumps():
+    with open("jumps.log","rt") as f:
+        sys = f.readlines()
+    syslist = []
+    for item in sys:
+        if not item.startswith("#"): continue
+        if not '"' in item: continue
+        system = item.split('"')[1]
+        if not system in syslist:
+            syslist.append(system)
 
+    coords = []
+    es = EliteSystemsList()
+    for system in syslist:
+        print "system:", system
+        esys = es.system_from_name(system)
+        if esys:
+            c= esys.coordinates
+            vector = (c.x,c.y,c.z)
+            if c.x+c.y+c.z!=0.0 and not vector in coords:
+                coords.append(vector)
+    print coords
+    return coords
+
+#
+# def plot_systems(num=30, coords=[]):
+#     #import FileDialog # didn't work to fix PyInstaller fail
+#     import matplotlib
+#     import matplotlib.pyplot as plt
+#     from mpl_toolkits.mplot3d import Axes3D
+#     fig=plt.figure()
+#     ax = fig.add_subplot(111,projection="3d")
+#
+#     if not coords:
+#         sys = EliteSystemsList()
+#         systems = sys.coordinates.values()[:num]
+#     else:
+#         systems=coords
+#     #print systems
+#     x=[]
+#     y=[]
+#     z=[]
+#     for xx,yy,zz in systems[:num]:
+#         x.append(xx)
+#         y.append(yy)
+#         z.append(zz)
+#
+#     ax.plot(x,y,z)
+#     fig.show()
+#     x=raw_input("close?")
+#     raise SystemExit
+
+import sys
 
 def make_cache():
     EliteSystemsList().write_pre_cache(PRE_CACHE_DIST)
@@ -407,6 +460,9 @@ def make_cache():
 
 if __name__ == "__main__":
     # make_cache()
+    coords = read_jumps()
+    plot_systems(99,coords)
+
     print "Please supply FROM and TO system on the command line"
     if len(sys.argv) < 3:
         pass  #run()

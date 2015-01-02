@@ -8,6 +8,7 @@ from hyphenate import hyphenate_word
 from natospell import nato_spell
 
 import ConfigParser
+import os.path
 
 
 class EliteTalker:
@@ -24,35 +25,40 @@ class EliteTalker:
         self.read_ini()
         self.set_normal()
 
-    def set_voice(self, voice_id = None, voice_number=None):
+    def set_voice(self, voice_name=None, voice_number=None):
         print "Available voices:"
         voices = self.s.getProperty("voices")
         for v in voices:
             print "Name: %-15s - ID: %60s " % (v.name, v.id)
 
         try:
-            if voice_id:
-                self.s.setProperty("voice",voice_id)
-                print "Setting voice to ", voice_id
+            if voice_name:
+                self.s.setProperty("voice",voice_name)
+                print "Setting voice to ", voice_name
             if voice_number:
                 self.set_voice_number(voice_number)
-        except Exception,e:
+        except Exception, e:
             print "Error setting the voice!"
             print e
             print locals()
 
     def read_ini(self):
-        try:
-            p = ConfigParser.ConfigParser()
-            p.read("speech.ini")
-            voice = p.getint("Voice","id")
-            self.set_voice(voice_number=voice)
-            self.FAST = p.getint("Voice","speed_fast") or SP_FAST
-            self.SLOW = p.getint("Voice","speed_slow") or SP_SLOW
-        except Exception,e:
-            print "Couldn't read speech.ini"
-            print e
-            print locals()
+        if not os.path.exists("speech.ini"):
+            # no speech ini -> try to guess
+            self.set_first_non_microsoft_voice() # voice_no =
+            #self.set_voice_number(voice_no)
+        else: # there IS a speech ini
+            try:
+                p = ConfigParser.ConfigParser()
+                p.read("speech.ini")
+                voice = p.getint("Voice","id")
+                self.set_voice(voice_number=voice)
+                self.FAST = p.getint("Voice","speed_fast") or SP_FAST
+                self.SLOW = p.getint("Voice","speed_slow") or SP_SLOW
+            except Exception,e:
+                print "Couldn't read speech.ini"
+                print e
+                print locals()
 
     def set_voice_number(self, voice_number):
         voices = self.s.getProperty("voices")
@@ -73,7 +79,8 @@ class EliteTalker:
         self.s.say(text)
         if not_now:
             return
-        return self.flush()
+        else:
+            return self.flush()
 
     def flush(self):
         if self.speaking:
@@ -87,10 +94,10 @@ class EliteTalker:
             #     counter -= 1
             #     time.sleep(0.1)
             #     #self.s.stop()
-            if self.speaking:
-                print "stopping."
+            #if self.speaking:
+            #   print "stopping."
                 #self.s.stop()
-                return False
+            #   return False
             #print "waited enough."
 
         self.speaking = True
@@ -109,8 +116,7 @@ class EliteTalker:
         #self.speech.setProperty("rate", int((self.FAST*5+self.SLOW*1) / 6))
         self.speech.setProperty("rate", self.FAST)
 
-    def speak_system(self, system):
-
+    def process_system_name(self, system):
         #print "## DEBUG Speak system, nato, hyphen", system, self.nato, self.hyphen
         sys = system
 
@@ -131,12 +137,19 @@ class EliteTalker:
             sys = sys_nato
         #print "## DEBUG sys", sys
 
+        return sys
+
+
+    def speak_system(self, system, not_now=False):
+
+        sys = self.process_system_name(system)
+
         if self.nato:
             self.set_normal()
         else:
             self.set_slow()
 
-        self.speak_now(sys)
+        self.speak(sys, not_now)
         self.set_normal()
 
     @staticmethod
@@ -159,8 +172,25 @@ class EliteTalker:
 
     def announce_system(self, system):
         self.s.setProperty("rate", SP_FAST)
-        self.say("Entering system ")
-        self.speak(system + "!!")
+        self.speak("Entering system ",not_now=True)
+        self.speak(system + "!")
+
+    def set_first_non_microsoft_voice(self):
+        "return the number of the first voice that doesn't have 'Microsoft' in the name"
+        try:
+            voices = self.s.getProperty("voices")
+            voice_id = None
+            for v in voices:
+                print "Name: %-15s - ID: %60s " % (v.name, v.id)
+                if not "icrosoft" in v.name:
+                    voice_id = v.id
+                    break
+
+            if voice_id:
+                self.set_voice(voice_name=voice_id)
+        except:
+            print "Failed to set the first non-Microsoft voice :("
+
 
 if __name__ == "__main__":
     e = EliteTalker()

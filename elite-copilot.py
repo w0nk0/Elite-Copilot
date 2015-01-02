@@ -1,15 +1,21 @@
-# TODO
-# TODO - Test and finalize combo box route selection
-# TODO - Optimize routing messages for failed routing etc
+# DONE - Test and finalize combo box route selection
+# DONE - Optimize routing messages for failed routing etc
 # TODO - Maybe: System-wide player chat
+# TODO - NEXT - Continous speaking of system names
+# TODO - Links button / page
+# TODO - Tooltips
+# TODO - Clipboard copy of next system
+# TODO - Route on "repeat" for endless trading runs back/forth
+
+# main window palette.button -> black commented out re Sharkan's black buttons bug
 
 __author__ = 'w0nk0'
 APPNAME = 'Elite-Copilot'
-APPVERSION = '0.27'
+APPVERSION = '0.29'
 
-CHECK_TIME = 10000
+CHECK_TIME = 4000
 REPEAT_NEXT_JUMPS_TIME = 45000
-NEXT_JUMP_WAIT_TIME = 4000
+NEXT_JUMP_WAIT_TIME = 6000
 UPCOMING_JUMPS_NO = 3
 UPCOMING_ANNOUNCE_BLOCK_TIME = 30
 
@@ -28,8 +34,7 @@ _HELP = ("\n"
          "\n"
          "You should include the starting and ending system ideally. The router will give announce your next jump when you are in a new system. It will mark visited systems as DONE.\n"
          "\n"
-         "If it doesn't work for you, you can try the \"..-console.exe\" version which will show debug output in a console window.\n"
-)
+         "If it doesn't work for you, you can try the \"..-console.exe\" version which will show debug output in a console window.\n")
 
 inactive_help = """The 'Reload Route' button will put the waypoints back into the editor that the router currently
 uses for routing, so you can change and 'Set Route' them again.
@@ -46,6 +51,7 @@ from watchlog import LogWatcher
 from talk import EliteTalker
 from donate import write_html
 from elitesystems import EliteSystemsList
+from time import asctime
 
 global_hotkey_func_1 = None
 global_hotkey_func_2 = None
@@ -56,6 +62,7 @@ global_hot_key_2 = "F21"
 global_hot_key_3 = "F22"
 
 
+# noinspection PyBroadException
 def receive_keyboard_event(event):
     # print dir(event)
     # ## assert(isinstance(event,pyHook.HookManager.ke))
@@ -114,6 +121,7 @@ def hook_setup(old_hook=None):
     return hm
 
 
+# noinspection PyBroadException
 class CopilotWidget(QWidget):
     def __init__(self, parent=None):
         super(CopilotWidget, self).__init__(parent)
@@ -127,23 +135,24 @@ class CopilotWidget(QWidget):
         self.no_reroute_systems = []
         self.bad_systems = []  # systems to avoid when routing
         self.hotkey_hook = None
+        self.hook_timer = QTimer() # initialized later, needs to be reinitialized regularly so it doesnt break
         self.searching_route = False
 
         self.verbose = (parent.settings.value("Verbose", "False").lower() == "true")
         self.nato_spell = (parent.settings.value("Nato_spelling", NATOSPELL).lower() == "true")
         self.hyphen_spell = (parent.settings.value("Hyphen_spelling", HYPHENSPELL).lower() == "true")
-        #self.route_caching = (parent.settings.value("Route_caching", ROUTE_CACHING).lower() == "true")
+        # self.route_caching = (parent.settings.value("Route_caching", ROUTE_CACHING).lower() == "true")
         self.route_caching = True
         self.default_jump_length = float(parent.settings.value("Default_jump_length", 0))
 
         settings = parent.settings
 
         global global_hot_key_1
-        global_hot_key_1 = str(parent.settings.value("Hotkey_1", global_hot_key_1))
+        global_hot_key_1 = str(settings.value("Hotkey_1", global_hot_key_1))
         global global_hot_key_2
-        global_hot_key_2 = str(parent.settings.value("Hotkey_2", global_hot_key_2))
+        global_hot_key_2 = str(settings.value("Hotkey_2", global_hot_key_2))
         global global_hot_key_3
-        global_hot_key_3 = str(parent.settings.value("Hotkey_3", global_hot_key_3))
+        global_hot_key_3 = str(settings.value("Hotkey_3", global_hot_key_3))
 
         self.Speaker = EliteTalker(nato_spelling=self.nato_spell, hyphen_spelling=self.hyphen_spell)
         print("Nato_spell %s, Hyphen_spell %s" % (self.Speaker.nato, self.Speaker.hyphen))
@@ -157,13 +166,18 @@ class CopilotWidget(QWidget):
         button_layout = QHBoxLayout()
         # b.append((QPushButton("Config"),self.open_config))
         b.append((QPushButton("&Confirm jump"), self.confirm_jump, 0))
+        b[-1][0].setToolTip("Set the next way point as visited")
         b.append((QPushButton("&Avoid system"), self.avoid_next_jump, 20))
+        b[-1][0].setToolTip("Plot a new route without the next waypoint")
         # b.append((QPushButton("&Find Route"), self.find_route,0))
         b.append((QPushButton("&Set Route"), self.set_route_clicked, 00))
+        b[-1][0].setToolTip("Use the text in the route box for routing announcements")
         # b.append((QPushButton("Reload Route"),self.reload_route_to_widget))
         b.append((QPushButton("&Go back"), self.reverse_route, 40))
+        b[-1][0].setToolTip("Reverse the route to go back to your origin")
         b.append((QPushButton("Help"), self.display_help, 0))
-
+        b[-1][0].setToolTip("Display some help in the lower text box")
+        
         for b in self.buttons:
             button_layout.addWidget(b[0])
             if b[2]:
@@ -173,7 +187,7 @@ class CopilotWidget(QWidget):
         b[0].setFixedWidth(50)
         # Hotkey setup
         self.setup_hook()  # why is this here and not up top again?!
-
+        
         # Route planning combo boxes etc
         combo_layout = QHBoxLayout()
         self.start_system_cb = QComboBox()
@@ -188,12 +202,13 @@ class CopilotWidget(QWidget):
         combo_layout.addWidget(self.start_system_cb, 2)
         combo_layout.addWidget(lbl2)
         combo_layout.addWidget(self.destination_system_cb, 2)
-
+        
         lbl3 = QLabel("with")
         lbl3.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.drive_entry = QLineEdit()
         self.drive_entry.setText(str(self.default_jump_length))
         self.drive_entry.setFixedWidth(40)
+        self.drive_entry.setToolTip("Jump distance in light years, with or without decimal places")
         lbl3.setBuddy(self.drive_entry)
         combo_layout.addWidget(lbl3)
         combo_layout.addWidget(self.drive_entry)
@@ -208,12 +223,7 @@ class CopilotWidget(QWidget):
         # lower button row
         button_layout_2 = QHBoxLayout()
 
-        netlog_btn = QPushButton("Set netlog Path")
-        netlog_btn.clicked.connect(self.netlog_path_dialog)
-        #netlog_btn.setEnabled(False)
-        button_layout_2.addWidget(netlog_btn)
-        button_layout_2.addSpacing(50)
-        self.upcoming_cb = QCheckBox("Announce upcoming")
+        self.upcoming_cb = QCheckBox("Repeat upcoming")
         button_layout_2.addWidget(self.upcoming_cb)
         self.upcoming_flag = False  # not default anymore because jump detection is back!
 
@@ -226,23 +236,17 @@ class CopilotWidget(QWidget):
         self.econ_routing_cb.stateChanged.connect(self.econ_routing_changed)
         self.econ_routing = False
 
-        self.donate_btn = btn = QPushButton(";)")
-        self.donate_btn.setEnabled(False)
-        btn.clicked.connect(self.donate)
-        btn.setFixedWidth(30)
-        button_layout_2.addSpacing(40)
-        button_layout_2.addWidget(btn)
-
         self.RouteWidget = w = QTextEdit()
         pal = QPalette()
         pal.setColor(QPalette.Base, QColor(10, 10, 10))
         pal.setColor(QPalette.Foreground, QColor("red"))
-        text1color = settings.value("text1color","(20, 240, 20)")
-        pal.setColor(QPalette.Text, QColor(20,240,20))
+        # text1color = settings.value("text1color", "(20, 240, 20)")
+        # QSettings doesn't give me tuples like I need :/
+        pal.setColor(QPalette.Text, QColor(20, 240, 20))
         w.setPalette(pal)
         w.setFont(QFont("Arial", 14))
         w.setTextColor(QColor(20, 240, 0))
-        #w.setTextBackgroundColor(QColor(60,60,60))
+        # w.setTextBackgroundColor(QColor(60,60,60))
 
         self.MessageWidget = w = QTextEdit()
         self.RouteWidget.setFont(QFont("Arial", 13))
@@ -251,6 +255,26 @@ class CopilotWidget(QWidget):
         w.setPalette(pal)
         w.setTextColor(QColor(110, 90, 255))
         w.setTextBackgroundColor(QColor("black"))
+
+        button_layout_3 = QHBoxLayout()
+
+        self.log_button = btn = QPushButton("Jump log")
+        btn.clicked.connect(self.show_jump_log)
+        button_layout_3.addWidget(btn)
+        button_layout_3.addSpacing(200)
+
+        netlog_btn = QPushButton("Set netlog Path")
+        netlog_btn.clicked.connect(self.netlog_path_dialog)
+        # netlog_btn.setEnabled(False)
+        button_layout_3.addWidget(netlog_btn)
+
+
+        self.donate_btn = btn = QPushButton("Tip me ; )")
+        #self.donate_btn.setEnabled(False)
+        btn.clicked.connect(self.donate)
+        btn.setFixedWidth(60)
+        button_layout_3.addSpacing(10)
+        button_layout_3.addWidget(btn)
 
         try:
             if not os.path.exists(EliteSystemsList.cache_filename()):
@@ -263,7 +287,7 @@ class CopilotWidget(QWidget):
             self.econ_routing = self.systems.economic_routing
             if self.route_caching:
                 if self.systems.pre_cache:
-                    self.say("Done!")
+                    self.say("Done.")
                 else:
                     self.say("Failed.")
         except Exception, err:
@@ -283,6 +307,7 @@ class CopilotWidget(QWidget):
         all_layout.addSpacing(10)
         all_layout.addWidget(QLabel("Messages"), 0)
         all_layout.addWidget(self.MessageWidget, 1)
+        all_layout.addLayout(button_layout_3)
 
         self.setLayout(all_layout)
 
@@ -300,6 +325,7 @@ class CopilotWidget(QWidget):
         if self.Watcher:
             self.fill_first_system()  # needs Watcher to be set up
 
+        # noinspection PyCallByClass,PyTypeChecker
         QTimer.singleShot(500, lambda: self.initialize_combo_boxes())
 
     def initialize_combo_boxes(self):
@@ -308,9 +334,20 @@ class CopilotWidget(QWidget):
         all_systems.sort()
         cb.addItems(all_systems)
         cb.setEditable(True)
+
         cb = self.destination_system_cb
         cb.addItems(all_systems)
         cb.setEditable(True)
+        if self.Watcher:
+            try:
+                self.start_system_cb.setEditText(self.Watcher._last_visited)
+            except Exception, err:
+                print "Failed to set start system from Watcher in init_combo_boxes"
+                print err
+
+        rnd = int(qrand()/100.0*len(all_systems))
+
+        cb.setEditText(all_systems[rnd])
 
     def fill_first_system(self):
         route_text = self.RouteWidget.toPlainText()
@@ -326,8 +363,7 @@ class CopilotWidget(QWidget):
         print "Putting system %s in Watcher as current" % last_done
         if last_done:
             self.Watcher.fake_system(last_done)
-        self.start_system_cb.setEditText(last_done)
-
+            self.start_system_cb.setEditText(last_done)
 
     def setup_hook(self):
         global global_hotkey_func_1
@@ -348,7 +384,7 @@ class CopilotWidget(QWidget):
     def reload_hook(self):
         # print "Reloading hook"
         self.hotkey_hook = hook_setup(self.hotkey_hook)
-        #print "new hook: ", self.hotkey_hook
+        # print "new hook: ", self.hotkey_hook
 
     @property
     def upcoming_flag(self):
@@ -374,7 +410,6 @@ class CopilotWidget(QWidget):
     def econ_routing_changed(self, flag):
         self.econ_routing = flag
         print "Econ routing:", flag
-
 
     @upcoming_flag.setter
     def upcoming_flag(self, flag):
@@ -410,12 +445,10 @@ class CopilotWidget(QWidget):
         print("Will use file '%s' for jump data (or a newer one if one is created later)\n" % fn)
 
     def check_netlog(self):
-        self.donate_btn.setEnabled(False)
         w = self.Watcher
         assert (isinstance(w, LogWatcher))
         if not w:
             return
-        self.donate_btn.setEnabled(self.routing)
         w.check()
 
     def _setup_upcoming(self):
@@ -450,22 +483,27 @@ class CopilotWidget(QWidget):
                     return
                 self.say("Not in a waypoint system.")
                 self.find_route(sys)
-                # make sure new jump announced!
-                # self.new_system_callback(self.Watcher.last_system())
+            else:
+                self.say("You're off course with rerouting disabled.")
                 return
 
         if 'arrived' in jump:  # or " found" in jump
             self.Speaker.speak_now(jump)
         else:
-            self.say('Next jump: ')
             try:
                 dist = self.systems.distance_between(sys, jump)
-                self.say("%d light years to " % dist)
-                self.Speaker.speak_system(jump)
-                self.message("-> " + str(jump))
-            except Exception:
+                if dist:
+                    txt = 'Next jump is: %d light years to ' % (dist or 0)
+                    txt += self.Speaker.process_system_name(jump) + '!'
+                    self.say(txt,not_now=False)
+                    #self.Speaker.speak_system(jump)
+                    self.message("-> " + str(jump))
+                else:
+                    self.say("Next jump: unknown.")
+            except Exception, err:
+                print "Error in check_route:", str(err)
                 print locals()
-                raise
+                # raise
 
         self.reload_route_to_widget(notify=False)
         self.next_jumps_time = time()
@@ -477,9 +515,10 @@ class CopilotWidget(QWidget):
     def new_system_callback(self, system):
         self.next_jumps_time = time()
         self.start_system_cb.setEditText(system)
-        self.message('# Entering system "%s"!' % system)
+        self.message('# Entering system "%s" @ %s' % (system, asctime()))
         if self.routing:
-            self.Speaker.announce_system(system)  # TODO - adapt to self.say() strategy
+            self.say('Entering system "%s"' % system, True)
+            #self.Speaker.announce_system(system)  # TODO - adapt to self.say() strategy
             QTimer().singleShot(NEXT_JUMP_WAIT_TIME, lambda: self.check_route(system))
 
             current_route = self.Router.get_route()
@@ -488,10 +527,10 @@ class CopilotWidget(QWidget):
             distance = self.remaining_route_length()
 
             if distance > 0 and self.Router.system_in_route(system):
-                message = "%d Light years until %s" % (distance, target)
-                self.say(message)
+                message = "%.1f Light years until %s" % (distance, target)
+                self.say(message,not_now=False)
             else:
-                # self.say("Remaining distance unknown.")
+                self.say("Remaining distance unknown.")
                 print "Not announcing distance %d from %s, not in %s" % (distance, system, str(current_route))
 
     def set_log_path(self, path):
@@ -516,7 +555,7 @@ class CopilotWidget(QWidget):
         #
         self.check_route()
 
-        #self.speak_next_jumps()
+        # self.speak_next_jumps()
 
     def set_route_from_widget(self):
         route_text = self.RouteWidget.toPlainText()
@@ -540,6 +579,14 @@ class CopilotWidget(QWidget):
             f.write("\n*********************************************************\n")
             f.write(log)
 
+    @staticmethod
+    def read_log(lines=99999):
+        log = []
+        with open("%s.log" % APPNAME, "rt") as f:
+            log = f.readlines()
+            log = log[-lines:]
+        return log
+
     def set_route_text(self, text_or_list):
         # self.message("Sending route in upper editor to router")
         if isinstance(text_or_list, list):
@@ -562,9 +609,9 @@ class CopilotWidget(QWidget):
     def set_route(self, route_text):
         self.RouteWidget.setText(route_text)
 
-    def say(self, text):
+    def say(self, text, not_now=False):
         if self.Speaker:
-            self.Speaker.say(text)
+            self.Speaker.speak(text, not_now)
         self.message('"' + text + '"')
 
     def reverse_route(self):
@@ -619,12 +666,12 @@ class CopilotWidget(QWidget):
             prev = self.Watcher.last_system()
             for jump in jumps:
                 dist = self.systems.distance_between(prev, jump)
-                self.say("%d light years to " % int(dist))
+                self.say("%d light years to " % int(dist),not_now=True)
                 self.Speaker.speak_system(jump)
                 prev = jump
 
                 if jump != jumps[-1]:
-                    self.Speaker.speak(" then ")
+                    self.Speaker.speak(" then ",not_now=True)
 
     def netlog_path_dialog(self):
         f_name, _ = QFileDialog().getOpenFileName(self, 'Navigate to one of the netLog files', '.', "netlog*.*")
@@ -656,13 +703,13 @@ class CopilotWidget(QWidget):
             del lines[-1]
 
         # start = start_system or lines[0]
+        # start = self.Router._undone(start)
         start = start_system or self.start_system_cb.currentText()
-        start = self.Router._undone(start)
 
         destination = destination_system or self.destination_system_cb.currentText()  # = lines[-1]
         try:
-            #drive = float(lines[1])
-            drive = float(self.drive_entry.text())
+            # drive = float(lines[1])
+            drive = float(self.drive_entry.text()) * 1.0  # possibly add system data inaccuracy workaround?
 
         except:
             self.message("No floating point found in second line, using default")
@@ -681,14 +728,14 @@ class CopilotWidget(QWidget):
             return
 
         self.default_jump_length = self.systems.last_routing_jump_distance
-        params = (len(route), start, destination, self.default_jump_length)
-        self.message("Route with %d steps from %s to %s with %.1f LY jump distance." % params)
+        params = (len(route)-1, start, destination, self.default_jump_length)
+        self.message("Route with %d jumps from %s to %s with %.1f LY jump distance." % params)
 
         self.RouteWidget.setText("\n".join(route))
         self.routing = True
         self.set_route_from_widget()
 
-        params = len(route), self.systems.route_length(route)
+        params = len(route)-1, self.systems.route_length(route)
         if params[1] < 0:
             self.say("No route found, you might need to upgrade your F S D.")
             print "start", start, "route", route
@@ -700,15 +747,14 @@ class CopilotWidget(QWidget):
                 print "Destination system %s added to rerouting exclusion list" % destination
 
         else:
-            self.say("Route found. %d steps, %d light years total." % params)
-            #self.confirm_jump(start)
-            self.check_route()
+            self.say("Route found. %d jumps, %d light years total." % params)
+            # self.confirm_jump(start)
+            QTimer().singleShot(200, lambda: self.check_route())
             # self.message(",".join(route))
 
         self.searching_route = False
         self.route_btn.setEnabled(True)
         self.route_btn.setText("Find Route")
-
 
     def remaining_route_length(self):
         route = self.Router.remaining_route()
@@ -736,7 +782,8 @@ class CopilotWidget(QWidget):
 
             systems = s.econ_neighbor_ranks(start, target, min(dist * 0.8, 14.0), self.bad_systems)
             self.say("Possible jump targets from %s to %s" % (start, target))
-            if self.verbose: self.say("which is %.0f light years away" % dist)
+            if self.verbose:
+                self.say("which is %.0f light years away" % dist)
         except Exception, e:
             print "Error in next_best_jumps :(", e
             print locals()
@@ -755,8 +802,8 @@ class CopilotWidget(QWidget):
             if spoken >= 3:
                 continue
             # if new_dist > dist: continue
-            self.say("%.0f Light years to" % new_dist)
-            self.Speaker.speak_system(str(system_name))
+            self.say("%.0f Light years to" % new_dist,not_now=True)
+            self.Speaker.speak_system(str(system_name),not_now=True)
             self.say("%.0f light years left" % jump_dist)
             spoken += 1
 
@@ -772,7 +819,6 @@ class CopilotWidget(QWidget):
         dist = s.distance_between(start, target)
         self.say("Please jump %d light years to %s" % (dist, target))
 
-
     def avoid_next_jump(self):
         next_jump = self.Router.remaining_route(1)[0]
         self.say("Avoiding %s" % next_jump)
@@ -782,6 +828,40 @@ class CopilotWidget(QWidget):
         except:
             start_sys = None
         self.find_route(start_sys)
+
+    def show_jump_log(self):
+        # read previous sessions
+        log = self.read_log()
+        # add the current session
+        current_log = [line + "\n" for line in self.MessageWidget.toPlainText().split("\n")]
+        log.extend(current_log)
+        # print "curr:", current_log
+        # print "log:", log
+        jumps = [l.replace("!", "") for l in log if l.startswith("#") or " 201" in l]
+
+        previous = None
+        old_date = None
+        filtered = []
+        for jump in jumps:
+            if " 201" in jump:
+                if jump[:8] != old_date:
+                    filtered.append(jump)
+                old_date = jump[:8]
+                continue
+
+            if jump != previous:
+                filtered.append(jump)
+                previous = jump
+
+        filtered.reverse()
+
+        with open("jumps.log", "wt") as f:
+            try:
+                f.writelines(filtered)
+                QDesktopServices().openUrl("jumps.log")
+            except Exception, err:
+                print "Error:", err
+                print "filtered:", filtered
 
 
 class CopilotWindow(QMainWindow):
@@ -800,20 +880,20 @@ class CopilotWindow(QMainWindow):
 
         w = self
         pal = QPalette()
-        bgcolor = self.settings.value("bgcolor", None)
+        # bgcolor = self.settings.value("bgcolor", None) # no easy way to get something that works from QSettings :S
         pal.setColor(QPalette.Background, QColor(40, 30, 40))
 
-        fgcolor = self.settings.value("fgcolor", None)
+        # fgcolor = self.settings.value("fgcolor", None)
         pal.setColor(QPalette.Foreground, QColor(40, 235, 40))
 
-        pal.setColor(QPalette.Button, QColor("black"))
+        # pal.setColor(QPalette.Button, QColor("black"))
         # pal.setColor(QPalette.Window,QColor("Black"))
         pal.setColor(QPalette.Disabled, QPalette.Background, QColor(50, 50, 50))
         pal.setColor(QPalette.Inactive, QPalette.Background, QColor(50, 50, 50))
         w.setPalette(pal)
         w.setFont(QFont("Arial narrow", 11))
-        #w.setTextColor(QColor("green"))
-        #w.setTextBackgroundColor(QColor("black"))
+        # w.setTextColor(QColor("green"))
+        # w.setTextBackgroundColor(QColor("black"))
 
         if not self.settings.value("resizable_window", "False").lower() == "true":
             self.setWindowFlags(Qt.MSWindowsFixedSizeDialogHint)
@@ -834,7 +914,7 @@ class CopilotWindow(QMainWindow):
         self.settings.setValue("NetlogPath", self.mainWidget.get_log_path())
         self.settings.setValue("Nato_spelling", self.mainWidget.nato_spell)
         self.settings.setValue("Hyphen_spelling", self.mainWidget.hyphen_spell)
-        #self.settings.setValue("Route_caching", self.mainWidget.route_caching)
+        # self.settings.setValue("Route_caching", self.mainWidget.route_caching)
         self.settings.setValue("LastRoute", self.get_route_text())
         self.settings.setValue("Default_jump_length", self.mainWidget.default_jump_length)
         self.settings.setValue("Hotkey_1", global_hot_key_1)

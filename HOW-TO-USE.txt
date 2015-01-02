@@ -1,0 +1,67 @@
+
+########## SETTING UP #############
+
+To get set up, you need 3 things:
+
+1) Download it (the .zip now includes all the necessary files)
+
+You can unzip it on your desktop or whereever, and then run the executable by double clicking it.
+The systems.json and the cache file don't need unpacking, just put them in the executable's directory.
+
+2) Set netlog path
+
+Click the "set netlog path" button in the tool, and navigate to your E:D/Products/FORC-FDEV../Logs folder and select any of the netlog*.* files in there. You only need to do this once.
+
+3) AppConfig.xml
+
+Before you start E:D, you also once need to change an option in your AppConfig.xml file in your Frontier\EDLaunch\Products\FORC-FDEV-D-1002 directory. In the Network  section put a new line with VerboseLogging="1" . That will have E:D write your current system into its log files so that Elite Copilot will know where you are in the galaxy.
+
+It should look like this: http://i.imgur.com/kxlNwTb.jpg
+
+Source code is on github: https://github.com/w0nk0/Elite-Copilot
+
+Optionally: 
+
+ 4) Set up Voice Attack / Vocals.exe to trigger the hotkeys to control it by voice:
+ 
+	F20 - repeat the next waypoint
+	
+	F21 - provide some alternate, shorter jumps if the current target isn't on the nav panel
+	
+	F22 - Avoid next waypoint: Make a new route that ignores the next waypoint
+		 (e.g. because you don't have permission to enter that system)
+		 
+You can change those hotkeys in the elite-copilot.ini that gets written after the first use of the app.
+
+###### CONTROLLING SYSTEM ANNOUNCEMENTS ##########
+
+You can control the spelling behaviour via editing the elite-copilot.ini (written after first exit from the app):
+
+Nato_spelling=true
+Hyphen_spelling=false
+
+These 2 entries in there control how systems are spelled.
+
+Hyphen_spelling basically breaks the system name into syllables which helps pronounciation especially with the built-in Windows voice.
+
+NATO spelling has system names spelled with a Nato alphabet for the next jump.
+They are always spelled "brief" (as if both those were set to false) for the arrival in system message so it doesn't get too chatty.
+
+###### WHAT DO THE DIFFERENT FILES MEAN/DO ? #########
+
+1) Systems.json:
+
+This is the systems data that all the routing is based upon. You can update it yourself from this link:
+https://github.com/SteveHodge/ed-systems/blob/master/systems.json?raw=true
+
+It doesn't need extracting or anything, just put it in E:C's directory. Read 2) though when you update it manually.
+
+2) neighbor-cache..
+
+This is a file I generate every couple releases that is calculated off the systems.json . You can delete / not have it in the
+first place. This will slow routing down by a bit, especially on 200+ LY routes.
+
+Q:This is a .z file indicating an archive. Do I need to unzip it? 
+A: NO, don't unzip it, the app does that on the fly.
+
+You *need* to delete it when you update systems.json manually, because it will take precedence over systems.json for routing.
