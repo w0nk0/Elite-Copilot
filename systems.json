@@ -20240,7 +20240,7 @@
     "region": "Gamma"
   },
   {
-    "name": "Ashe",
+    "name": "Asha2",
     "x": -92.21875,
     "y": 74.21875,
     "z": 116.09375,
@@ -43026,7 +43026,7 @@
     "region": "Gamma"
   },
   {
-    "name": "Dalat",
+    "name": "Dala2",
     "x": 196.65625,
     "y": -159.15625,
     "z": 4.71875,
@@ -45309,7 +45309,7 @@
     "z": 59.53125,
     "contributor": "FD",
     "contributed": "2014-11-27T11:33:44.195Z",
-    "region": "Gamma (renamed)"
+    "region": "Gamma"
   },
   {
     "name": "Djalibara",
@@ -99883,7 +99883,7 @@
     "region": "Gamma"
   },
   {
-    "name": "Kanur",
+    "name": "Kanu2",
     "x": -22.125,
     "y": -24.90625,
     "z": 96.96875,
@@ -131403,7 +131403,7 @@
     "region": "Gamma"
   },
   {
-    "name": "Narim",
+    "name": "Nari2",
     "x": 142.65625,
     "y": -207.4375,
     "z": -54.25,
@@ -151101,7 +151101,7 @@
     "region": "Gamma"
   },
   {
-    "name": "Samas",
+    "name": "Sama2",
     "x": 55.84375,
     "y": -173.3125,
     "z": 166.59375,
@@ -155826,7 +155826,7 @@
     "region": "Gamma"
   },
   {
-    "name": "Sireo",
+    "name": "Siren2",
     "x": 141.125,
     "y": 12.625,
     "z": -55.71875,
@@ -159342,7 +159342,7 @@
     "region": "Gamma"
   },
   {
-    "name": "Takak",
+    "name": "Taka2",
     "x": 127.875,
     "y": -10.78125,
     "z": 75.625,
@@ -189105,7 +189105,7 @@
   {
     "name": "Wolf 483",
     "calculated": true,
-    "contributor": "RedWizzard",
+    "contributor": "Red Wizzard",
     "contributed": "2014-10-20T09:28:05.232Z",
     "distances": [
       {
@@ -189149,7 +189149,7 @@
   {
     "name": "LHS 2921",
     "calculated": true,
-    "contributor": "RedWizzard",
+    "contributor": "Red Wizzard",
     "contributed": "2014-10-20T09:23:18.780Z",
     "distances": [
       {
@@ -189193,7 +189193,7 @@
   {
     "name": "Grannus",
     "calculated": true,
-    "contributor": "RedWizzard",
+    "contributor": "Red Wizzard",
     "contributed": "2014-10-20T08:54:52.044Z",
     "distances": [
       {
@@ -189237,7 +189237,7 @@
   {
     "name": "Matask",
     "calculated": true,
-    "contributor": "RedWizzard",
+    "contributor": "Red Wizzard",
     "contributed": "2014-10-21T05:24:15.246Z",
     "distances": [
       {
@@ -206060,365 +206060,5 @@
 	  "x": 155.5,
 	  "y": -13.15625,
 	  "z": 60.28125
-	},
-	{
-	  "name": "ICV HR-V b2-0",
-	  "calculated": true,
-	  "contributor": "RedWizzard",
-	  "contributed": "2014-12-13T05:33:59.305Z",
-	  "region": "Gamma",
-	  "distances": [
-	    {
-	      "system": "Sol",
-	      "distance": 129.93
-	    },
-	    {
-	      "system": "Kato",
-	      "distance": 289.63
-	    },
-	    {
-	      "system": "Cayu",
-	      "distance": 162.36
-	    },
-	    {
-	      "system": "Prim",
-	      "distance": 187.77
-	    },
-	    {
-	      "system": "Sabi",
-	      "distance": 175.25
-	    },
-	    {
-	      "system": "Aka",
-	      "distance": 286.84
-	    },
-	    {
-	      "system": "Juro",
-	      "distance": 233.15
-	    }
-	  ],
-	  "x": 74.03125,
-	  "y": -105.15625,
-	  "z": 18.5
-	},
-	{
-	  "name": "ICZ GB-W b2-0",
-	  "calculated": true,
-	  "contributor": "RedWizzard",
-	  "contributed": "2014-12-12T12:55:57.553Z",
-	  "region": "Gamma",
-	  "distances": [
-	    {
-	      "system": "Sol",
-	      "distance": 147.49
-	    },
-	    {
-	      "system": "Kato",
-	      "distance": 322.62
-	    },
-	    {
-	      "system": "Cayu",
-	      "distance": 197.19
-	    },
-	    {
-	      "system": "Prim",
-	      "distance": 211.64
-	    },
-	    {
-	      "system": "Sabi",
-	      "distance": 136.16
-	    },
-	    {
-	      "system": "Aka",
-	      "distance": 283.21
-	    },
-	    {
-	      "system": "Juro",
-	      "distance": 231.06
-	    }
-	  ],
-	  "x": 119.21875,
-	  "y": -84.5625,
-	  "z": 19.71875
-	},
-	{
-	  "name": "ICZ GB-X c1-27",
-	  "calculated": true,
-	  "contributor": "RedWizzard",
-	  "contributed": "2014-12-12T12:51:55.259Z",
-	  "region": "Gamma",
-	  "distances": [
-	    {
-	      "system": "Sol",
-	      "distance": 128.38
-	    },
-	    {
-	      "system": "Kato",
-	      "distance": 304.6
-	    },
-	    {
-	      "system": "Cayu",
-	      "distance": 202.84
-	    },
-	    {
-	      "system": "Prim",
-	      "distance": 200.58
-	    },
-	    {
-	      "system": "Sabi",
-	      "distance": 133.03
-	    },
-	    {
-	      "system": "Aka",
-	      "distance": 265.53
-	    },
-	    {
-	      "system": "Juro",
-	      "distance": 223.69
-	    }
-	  ],
-	  "x": 104.28125,
-	  "y": -71.9375,
-	  "z": 20.75
-	},
-	{
-	  "name": "Shui Wei Sector FH-U b3-1",
-	  "calculated": true,
-	  "contributor": "RedWizzard",
-	  "contributed": "2014-12-12T12:41:35.865Z",
-	  "region": "Gamma",
-	  "distances": [
-	    {
-	      "system": "Sol",
-	      "distance": 78.59
-	    },
-	    {
-	      "system": "Kato",
-	      "distance": 249.75
-	    },
-	    {
-	      "system": "Cayu",
-	      "distance": 210.97
-	    },
-	    {
-	      "system": "Prim",
-	      "distance": 162.8
-	    },
-	    {
-	      "system": "Sabi",
-	      "distance": 158.97
-	    },
-	    {
-	      "system": "Aka",
-	      "distance": 227.59
-	    },
-	    {
-	      "system": "Juro",
-	      "distance": 223.39
-	    }
-	  ],
-	  "x": 50.53125,
-	  "y": -51.25,
-	  "z": 31.5625
-	},
-	{
-	  "name": "L 355-62",
-	  "calculated": true,
-	  "contributor": "RedWizzard",
-	  "contributed": "2014-12-12T12:04:31.240Z",
-	  "region": "Gamma",
-	  "distances": [
-	    {
-	      "system": "Sol",
-	      "distance": 47.75
-	    },
-	    {
-	      "system": "Kato",
-	      "distance": 202.61
-	    },
-	    {
-	      "system": "Cayu",
-	      "distance": 226.39
-	    },
-	    {
-	      "system": "Prim",
-	      "distance": 151.82
-	    },
-	    {
-	      "system": "Sabi",
-	      "distance": 190.7
-	    },
-	    {
-	      "system": "Aka",
-	      "distance": 207.73
-	    },
-	    {
-	      "system": "Juro",
-	      "distance": 225.34
-	    }
-	  ],
-	  "x": 4.65625,
-	  "y": -37.03125,
-	  "z": 29.78125
-	},
-	{
-	  "name": "HR 120",
-	  "calculated": true,
-	  "contributor": "RedWizzard",
-	  "contributed": "2014-12-14T12:38:39.488Z",
-	  "region": "Gamma",
-	  "distances": [
-	    {
-	      "system": "Sol",
-	      "distance": 140.53
-	    },
-	    {
-	      "system": "Kato",
-	      "distance": 275.03
-	    },
-	    {
-	      "system": "Cayu",
-	      "distance": 130.49
-	    },
-	    {
-	      "system": "Prim",
-	      "distance": 165.58
-	    },
-	    {
-	      "system": "Sabi",
-	      "distance": 220.38
-	    },
-	    {
-	      "system": "Aka",
-	      "distance": 303.38
-	    },
-	    {
-	      "system": "Juro",
-	      "distance": 260.79
-	    }
-	  ],
-	  "x": 37.84375,
-	  "y": -131.09375,
-	  "z": 33.625
-	},
-	{
-	  "name": "ICZ NN-T b3-2",
-	  "calculated": true,
-	  "contributor": "RedWizzard",
-	  "contributed": "2014-12-14T12:34:20.228Z",
-	  "region": "Gamma",
-	  "distances": [
-	    {
-	      "system": "Sol",
-	      "distance": 162.25
-	    },
-	    {
-	      "system": "Kato",
-	      "distance": 276.42
-	    },
-	    {
-	      "system": "Cayu",
-	      "distance": 110.82
-	    },
-	    {
-	      "system": "Prim",
-	      "distance": 154.17
-	    },
-	    {
-	      "system": "Sabi",
-	      "distance": 254.49
-	    },
-	    {
-	      "system": "Aka",
-	      "distance": 322.46
-	    },
-	    {
-	      "system": "Juro",
-	      "distance": 290.17
-	    }
-	  ],
-	  "x": 16.59375,
-	  "y": -153.125,
-	  "z": 51
-	},
-	{
-	  "name": "Shui Wei Sector UJ-R b4-0",
-	  "calculated": true,
-	  "contributor": "RedWizzard",
-	  "contributed": "2014-12-14T12:05:39.783Z",
-	  "region": "Gamma",
-	  "distances": [
-	    {
-	      "system": "Sol",
-	      "distance": 188.98
-	    },
-	    {
-	      "system": "Kato",
-	      "distance": 304.57
-	    },
-	    {
-	      "system": "Cayu",
-	      "distance": 85.43
-	    },
-	    {
-	      "system": "Prim",
-	      "distance": 170.88
-	    },
-	    {
-	      "system": "Sabi",
-	      "distance": 265.76
-	    },
-	    {
-	      "system": "Aka",
-	      "distance": 348.6
-	    },
-	    {
-	      "system": "Juro",
-	      "distance": 305.81
-	    }
-	  ],
-	  "x": 31.8125,
-	  "y": -178.21875,
-	  "z": 54.21875
-	},
-	{
-	  "name": "ICZ PN-T b3-2",
-	  "calculated": true,
-	  "contributor": "RedWizzard",
-	  "contributed": "2014-12-14T12:00:22.686Z",
-	  "region": "Gamma",
-	  "distances": [
-	    {
-	      "system": "Sol",
-	      "distance": 178.64
-	    },
-	    {
-	      "system": "Kato",
-	      "distance": 315.3
-	    },
-	    {
-	      "system": "Cayu",
-	      "distance": 106.17
-	    },
-	    {
-	      "system": "Prim",
-	      "distance": 180.48
-	    },
-	    {
-	      "system": "Sabi",
-	      "distance": 232.27
-	    },
-	    {
-	      "system": "Aka",
-	      "distance": 335.89
-	    },
-	    {
-	      "system": "Juro",
-	      "distance": 286.21
-	    }
-	  ],
-	  "x": 64.28125,
-	  "y": -160.375,
-	  "z": 45.40625
 	}
 ]
