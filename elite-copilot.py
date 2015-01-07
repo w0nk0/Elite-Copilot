@@ -6,12 +6,14 @@
 # TODO - Tooltips
 # TODO - Clipboard copy of next system
 # TODO - Route on "repeat" for endless trading runs back/forth
+# TODO - Mute button
+# TODO - scroll to next waypoint
 
 # main window palette.button -> black commented out re Sharkan's black buttons bug
 
 __author__ = 'w0nk0'
 APPNAME = 'Elite-Copilot'
-APPVERSION = '0.29'
+APPVERSION = '0.29b'
 
 CHECK_TIME = 4000
 REPEAT_NEXT_JUMPS_TIME = 45000
@@ -39,6 +41,9 @@ _HELP = ("\n"
 inactive_help = """The 'Reload Route' button will put the waypoints back into the editor that the router currently
 uses for routing, so you can change and 'Set Route' them again.
 """
+
+MUTE_ICON_FILE = "mute-speaker.png"
+UNMUTE_ICON_FILE = "unmute-speaker.png"
 
 import os
 from time import time
@@ -236,6 +241,15 @@ class CopilotWidget(QWidget):
         self.econ_routing_cb.stateChanged.connect(self.econ_routing_changed)
         self.econ_routing = False
 
+        self.mute_button = QPushButton(self)
+        self.mute_button.setFixedWidth(30)
+        self.mute_button.setIcon(QIcon(MUTE_ICON_FILE))
+        self.mute_button.setCheckable(True)
+        self.mute_button.setAutoExclusive(False)
+        self.mute_button.clicked.connect(self.mute_toggle)
+        self.muted = False
+        button_layout_2.addWidget(self.mute_button)
+
         self.RouteWidget = w = QTextEdit()
         pal = QPalette()
         pal.setColor(QPalette.Base, QColor(10, 10, 10))
@@ -406,6 +420,33 @@ class CopilotWidget(QWidget):
     def do_econ_routing(self, flag):
         self.econ_routing_cb.setChecked(flag)
         self.systems.economic_routing = flag
+
+    def mute_toggle(self):
+        state = self.muted
+        print "State:", state
+        if state:
+            self.muted = False
+            self.say("Hello again!")
+        else:
+            self.say("My lips are sealed.")
+            self.muted = True
+
+    @property
+    def muted(self):
+        value = self.mute_button.isCheckable()
+        print "Muted:", value
+        return value
+
+    @muted.setter
+    def muted(self,flag):
+        print "Setting to",flag
+        if flag:
+            self.mute_button.setIcon(QIcon(MUTE_ICON_FILE))
+            self.mute_button.setCheckable(False)
+            self.mute_button.setCheckable(True)
+        else:
+            self.mute_button.setIcon(QIcon(UNMUTE_ICON_FILE))
+            self.mute_button.setCheckable(False)
 
     def econ_routing_changed(self, flag):
         self.econ_routing = flag
@@ -610,9 +651,11 @@ class CopilotWidget(QWidget):
         self.RouteWidget.setText(route_text)
 
     def say(self, text, not_now=False):
+        self.message('"' + text + '"')
+        if self.muted:
+            return
         if self.Speaker:
             self.Speaker.speak(text, not_now)
-        self.message('"' + text + '"')
 
     def reverse_route(self):
         self.message("Reversing the router's current route")
@@ -667,11 +710,12 @@ class CopilotWidget(QWidget):
             for jump in jumps:
                 dist = self.systems.distance_between(prev, jump)
                 self.say("%d light years to " % int(dist),not_now=True)
-                self.Speaker.speak_system(jump)
+                if not self.muted:
+                    self.Speaker.speak_system(jump)
                 prev = jump
 
                 if jump != jumps[-1]:
-                    self.Speaker.speak(" then ",not_now=True)
+                    self.say(" then ",not_now=True)
 
     def netlog_path_dialog(self):
         f_name, _ = QFileDialog().getOpenFileName(self, 'Navigate to one of the netLog files', '.', "netlog*.*")

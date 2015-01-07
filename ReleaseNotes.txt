@@ -1,3 +1,7 @@
+V 0.29b
+
+- Speaker icon to mute speech output by popular demand. (Icons by http://www.flaticon.com/)
+
 V 0.29
 
 - Jump logs now have a timestamp in your local time
