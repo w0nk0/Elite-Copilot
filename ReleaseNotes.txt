@@ -1,3 +1,13 @@
+V 0.29c
+
+- New feature: Upon announcing the next jump, the target system's name is now copied to the clipboard!
+  (e.g. for entry into the Galaxy map)
+  
+  This can be turned off by having an entry in elite-copilot.ini as follows:
+  
+  CopyJumpToClipboard=False
+
+  
 V 0.29b
 
 - Speaker icon to mute speech output by popular demand. (Icons by http://www.flaticon.com/)

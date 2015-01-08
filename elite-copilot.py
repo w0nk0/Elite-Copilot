@@ -13,7 +13,7 @@
 
 __author__ = 'w0nk0'
 APPNAME = 'Elite-Copilot'
-APPVERSION = '0.29b'
+APPVERSION = '0.29c'
 
 CHECK_TIME = 4000
 REPEAT_NEXT_JUMPS_TIME = 45000
@@ -142,6 +142,7 @@ class CopilotWidget(QWidget):
         self.hotkey_hook = None
         self.hook_timer = QTimer() # initialized later, needs to be reinitialized regularly so it doesnt break
         self.searching_route = False
+        self.copy_jump_to_clipboard = (parent.settings.value("CopyJumpToClipboard", "True").lower() == "true")
 
         self.verbose = (parent.settings.value("Verbose", "False").lower() == "true")
         self.nato_spell = (parent.settings.value("Nato_spelling", NATOSPELL).lower() == "true")
@@ -539,6 +540,8 @@ class CopilotWidget(QWidget):
                     self.say(txt,not_now=False)
                     #self.Speaker.speak_system(jump)
                     self.message("-> " + str(jump))
+                    if self.copy_jump_to_clipboard:
+                        os.system("echo %s | clip" % jump) # copy system to clipboard
                 else:
                     self.say("Next jump: unknown.")
             except Exception, err:
