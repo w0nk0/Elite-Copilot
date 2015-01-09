@@ -3,17 +3,15 @@
 # TODO - Maybe: System-wide player chat
 # TODO - NEXT - Continous speaking of system names
 # TODO - Links button / page
-# TODO - Tooltips
-# TODO - Clipboard copy of next system
+# TODO - Tooltips (partially done)
 # TODO - Route on "repeat" for endless trading runs back/forth
-# TODO - Mute button
 # TODO - scroll to next waypoint
 
 # main window palette.button -> black commented out re Sharkan's black buttons bug
 
 __author__ = 'w0nk0'
 APPNAME = 'Elite-Copilot'
-APPVERSION = '0.29c'
+APPVERSION = '0.30'
 
 CHECK_TIME = 4000
 REPEAT_NEXT_JUMPS_TIME = 45000
@@ -544,13 +542,16 @@ class CopilotWidget(QWidget):
                         os.system("echo %s | clip" % jump) # copy system to clipboard
                 else:
                     self.say("Next jump: unknown.")
+                    print "Unknown dist from ", sys, "to", jump
             except Exception, err:
                 print "Error in check_route:", str(err)
                 print locals()
                 # raise
 
-        self.reload_route_to_widget(notify=False)
         self.next_jumps_time = time()
+        if dist:
+            self.reload_route_to_widget(notify=False)
+            self.scroll_to_text(jump)
 
         if self.Router.route_complete():
             self.routing = False
@@ -674,7 +675,7 @@ class CopilotWidget(QWidget):
             self.message("Putting the router's current route in editor above")
         r = self.Router.get_route()
         r_text = "\n".join(r)
-        self.RouteWidget.setText(r_text)
+        self.RouteWidget.setText(r_text.upper())
 
     def get_route_content(self):
         return self.RouteWidget.toPlainText()
@@ -910,6 +911,35 @@ class CopilotWidget(QWidget):
                 print "Error:", err
                 print "filtered:", filtered
 
+    def scroll_to_text(self, jump):
+        #self.say("Delaying things a little bit")
+        print "Scrolling to %s" % jump
+
+        #self.RouteWidget.setFocus(Qt.MouseFocusReason)
+
+        tc = self.RouteWidget.textCursor()
+        #print "TC pos",tc.position()
+
+        found = self.RouteWidget.find(jump)
+        if not found:
+            return
+
+        # select line with jump target
+        tc.select(QTextCursor.LineUnderCursor)
+
+        return
+
+        # debug stuff below, turns out reload_route_to_widget was the problem, cursor was fine here!
+
+        #print "Found: %s" % str(found)
+        #pos = tc.position()
+        #print "TC pos",pos
+        #self.say("Delaying things a little more")
+        #cur = QTextCursor()
+        #cur.setPosition(pos)
+        #self.RouteWidget.setTextCursor(cur)
+        #self.RouteWidget.moveCursor()
+        #QTextCursor.sel
 
 class CopilotWindow(QMainWindow):
     def __init__(self, parent=None):

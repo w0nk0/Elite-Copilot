@@ -1,10 +1,10 @@
-__author__ = 'nico'
+__author__ = 'W0nk0'
 
 import json
 from math import sqrt
 
 PRE_CACHE_DIST = 28.0
-DEFAULT_JUMP_LENGTH = 13.0
+DEFAULT_JUMP_LENGTH = 11.0
 ECONOMIC_ROUTING = True
 
 SYSTEMS_JSON_URL = 'https://github.com/SteveHodge/ed-systems/blob/master/systems.json?raw=true'
