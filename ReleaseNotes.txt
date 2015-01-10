@@ -1,3 +1,8 @@
+V 0.30
+
+- next jump is now highlighted in the route window, and the window scrolls to ensure it's visible
+- cleaned up the method of copying the next jump to the clipboard. No more stealing the focus from Elite.
+
 V 0.29c
 
 - New feature: Upon announcing the next jump, the target system's name is now copied to the clipboard!
