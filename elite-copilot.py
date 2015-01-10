@@ -539,7 +539,8 @@ class CopilotWidget(QWidget):
                     #self.Speaker.speak_system(jump)
                     self.message("-> " + str(jump))
                     if self.copy_jump_to_clipboard:
-                        os.system("echo %s | clip" % jump) # copy system to clipboard
+                        clipboard.setText(jump)
+                        #os.system("echo %s | clip" % jump) # copy system to clipboard
                 else:
                     self.say("Next jump: unknown.")
                     print "Unknown dist from ", sys, "to", jump
@@ -914,7 +915,6 @@ class CopilotWidget(QWidget):
     def scroll_to_text(self, jump):
         #self.say("Delaying things a little bit")
         print "Scrolling to %s" % jump
-
         #self.RouteWidget.setFocus(Qt.MouseFocusReason)
 
         tc = self.RouteWidget.textCursor()
@@ -1014,6 +1014,7 @@ class CopilotWindow(QMainWindow):
 from sys import argv
 
 app = QApplication(argv)
+clipboard = app.clipboard()
 win = CopilotWindow()
 win.show()
 app.exec_()
