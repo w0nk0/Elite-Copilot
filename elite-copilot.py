@@ -11,7 +11,7 @@
 
 __author__ = 'w0nk0'
 APPNAME = 'Elite-Copilot'
-APPVERSION = '0.30'
+APPVERSION = '0.30a'
 
 CHECK_TIME = 4000
 REPEAT_NEXT_JUMPS_TIME = 45000
@@ -324,6 +324,14 @@ class CopilotWidget(QWidget):
 
         self.setLayout(all_layout)
 
+        from cherryserver import MiniWebServer
+        self.web_display = None
+        try:
+            self.web_display = MiniWebServer()
+            self.web_display.main = "Elite Copilot has started"
+        except:
+            print "Couldn't set up Webserver for smartphone display :("
+
     def initialize(self):
         """Sets up the objects doing the work"""
         self.say("Copilot ready!")
@@ -541,6 +549,11 @@ class CopilotWidget(QWidget):
                     if self.copy_jump_to_clipboard:
                         clipboard.setText(jump)
                         #os.system("echo %s | clip" % jump) # copy system to clipboard
+
+                    if self.web_display:
+                        self.web_display.main = '%s - %.1f LY jump' % (jump.upper(), dist or 0)
+                        self.web_display.secondary = '%.1f LY to ' % self.remaining_route_length()
+                        self.web_display.secondary += str(self.Router.get_route()[-1]).upper()
                 else:
                     self.say("Next jump: unknown.")
                     print "Unknown dist from ", sys, "to", jump
@@ -612,6 +625,8 @@ class CopilotWidget(QWidget):
         self.write_route()
         self.save_log()
         self.say("Goodbye Commander.")
+        if self.web_display:
+            self.web_display.stop()
         e.accept()
         super(CopilotWidget, self).close()
 
