@@ -329,6 +329,8 @@ class CopilotWidget(QWidget):
         try:
             self.web_display = MiniWebServer()
             self.web_display.main = "Elite Copilot has started"
+            from findip4address import address
+            self.message("You can use http://%s:8080 in your smartphone as an external display!" % address())
         except:
             print "Couldn't set up Webserver for smartphone display :("
 
