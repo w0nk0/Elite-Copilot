@@ -1,0 +1,29 @@
+* { color: #c86600; }
+* { font: bold 14px ; }
+* { background: #000000; }
+QPushButton { background: #c86600; color: black; }
+QLineEdit, QPushButton { border 4px none #c86600; border-radius: 4px; }
+QLineEdit { color: #d70; background: black; }
+
+/* green
+
+* { color: #1b0; }
+* { font: bold 14px ; }
+* { background: #000000; }
+QPushButton { background: #1b0; color: black; }
+QLineEdit, QPushButton { border 4px none #1b0; border-radius: 4px; }
+QLineEdit { color: #1b0; background: black; }
+
+*/
+
+
+/* inverse orange
+
+*/
+
+* { color: #c86600; }
+* { font: bold 14px ; }
+* { background: #000000; }
+QPushButton { background: #c86600; color: black; }
+QLineEdit, QPushButton { border 4px none #c86600; border-radius: 4px; }
+QLineEdit { background: #d70; color: black; }
