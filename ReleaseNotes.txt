@@ -1,3 +1,10 @@
+V 0.31
+
+- added an always-on-top ingame overlay window!
+- added an integrated web server to see the next jump on your smartphone from http://localip:8080
+  (see the lower window output upon startup for your local ip address!)
+- Slight layout changes, introduction of Paypal logo on donation button since several users asked how to donate
+
 V 0.30
 
 - next jump is now highlighted in the route window, and the window scrolls to ensure it's visible
