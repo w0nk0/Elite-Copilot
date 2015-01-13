@@ -297,10 +297,10 @@ p {
         <div class="pure-u-1 pure-u-md-1-3">
             <div class="pricing-table pricing-table-enterprise">
                 <div class="pricing-table-header">
-                    <h2>Buy me an espresso!</h2>
+                    <h2>Buy me a drink!</h2>
 
                     <span class="pricing-table-price">
-                        $3 <span></span>
+                        $5 <span></span>
                     </span>
                 </div>
 
