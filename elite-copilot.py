@@ -1,17 +1,16 @@
 # DONE - Test and finalize combo box route selection
 # DONE - Optimize routing messages for failed routing etc
-# TODO - Maybe: System-wide player chat
-# TODO - NEXT - Continous speaking of system names
+# Done - scroll to next waypoint
+# Maybe: System-wide player chat
 # TODO - Links button / page
 # TODO - Tooltips (partially done)
 # TODO - Route on "repeat" for endless trading runs back/forth
-# TODO - scroll to next waypoint
 
 # main window palette.button -> black commented out re Sharkan's black buttons bug
 
 __author__ = 'w0nk0'
 APPNAME = 'Elite-Copilot'
-APPVERSION = '0.30a'
+APPVERSION = '0.31'
 
 CHECK_TIME = 4000
 REPEAT_NEXT_JUMPS_TIME = 45000
@@ -40,8 +39,8 @@ inactive_help = """The 'Reload Route' button will put the waypoints back into th
 uses for routing, so you can change and 'Set Route' them again.
 """
 
-MUTE_ICON_FILE = "mute-speaker.png"
-UNMUTE_ICON_FILE = "unmute-speaker.png"
+MUTE_ICON_FILE = ":/mute-speaker.png"
+UNMUTE_ICON_FILE = ":/unmute-speaker.png"
 
 import os
 from time import time
@@ -55,6 +54,8 @@ from talk import EliteTalker
 from donate import write_html
 from elitesystems import EliteSystemsList
 from time import asctime
+
+import elitebuttons
 
 global_hotkey_func_1 = None
 global_hotkey_func_2 = None
@@ -123,6 +124,70 @@ def hook_setup(old_hook=None):
     hm.HookKeyboard()
     return hm
 
+class IngameOverlay(QWidget):
+    def __init__(self, parent):
+        super(IngameOverlay,self).__init__(parent)
+        self.text_field = w = QLineEdit()
+        self.text_field.setText("<- Click to move overlay")
+
+        self.windowMode = -1
+
+        pal = QPalette()
+        pal.setColor(QPalette.Base, QColor(10, 10, 10))
+        pal.setColor(QPalette.Foreground, QColor("orange"))
+        pal.setColor(QPalette.Text, QColor("orange"))
+
+        self.layout = QHBoxLayout()
+        self.btn = QPushButton("*")
+        #print "btn style"
+        self.btn.setStyleSheet( "* { background: #d07000;}")
+        self.btn.setMaximumWidth(13)
+        self.btn.setMaximumHeight(13)
+        self.btn.setPalette(pal)
+        self.btn.clicked.connect(self.changeWindowMode)
+        self.layout.addWidget(self.btn)
+        self.layout.addWidget(self.text_field)
+        self.setLayout(self.layout)
+
+        self.setMinimumWidth(350)
+
+        self.setWindowTitle("Nav hint")
+        style = "* { background: black; }; * { foreground-color: orange; };"
+        #print "ingameovl style"
+        self.setStyleSheet(style)
+
+        pal.setColor(QPalette.Text, QColor(220, 110, 0))
+        self.text_field.setPalette(pal)
+        #print "txtfld style", self.text_field
+        self.text_field.setStyleSheet("* { border-style: 0px;}")
+        self.text_field.setFont(QFont("Arial", 12))
+        self.move(QPoint(20,20))
+        self.setSplash()
+
+
+    def setSplash(self):
+        self.setWindowFlags(Qt.SplashScreen | Qt.WindowStaysOnTopHint)
+        #self.setWindowFlags(
+        print("Splash")
+
+    def setDialog(self):
+        self.setWindowFlags(Qt.Dialog)
+        print("Dialog")
+
+    def set_message(self,txt):
+        self.text_field.setText(txt)
+
+    def changeWindowMode(self,msg=None):
+        self.windowMode = -self.windowMode
+        pos=self.pos()
+        self.hide()
+        if self.windowMode>0:
+            self.setDialog()
+        else:
+            self.setSplash()
+        self.show()
+        mode = self.windowMode
+        self.move(pos.x()- 10 * mode, pos.y() - 10 * mode)
 
 # noinspection PyBroadException
 class CopilotWidget(QWidget):
@@ -279,15 +344,20 @@ class CopilotWidget(QWidget):
         netlog_btn = QPushButton("Set netlog Path")
         netlog_btn.clicked.connect(self.netlog_path_dialog)
         # netlog_btn.setEnabled(False)
+
+
+        icon=QIcon(":/PPbtn.png")
+        self.donate_btn = btn = QPushButton(icon,'Donate!') #"Tip me ; )"
+
+        btn.clicked.connect(self.donate)
+        btn.setFixedWidth(82)
+        button_layout_3.addWidget(btn)
+        button_layout_3.addSpacing(10)
         button_layout_3.addWidget(netlog_btn)
 
-
-        self.donate_btn = btn = QPushButton("Tip me ; )")
-        #self.donate_btn.setEnabled(False)
-        btn.clicked.connect(self.donate)
-        btn.setFixedWidth(60)
-        button_layout_3.addSpacing(10)
-        button_layout_3.addWidget(btn)
+        print "Showing overlay"
+        self.overlayWindow = IngameOverlay(None)
+        self.overlayWindow.show()
 
         try:
             if not os.path.exists(EliteSystemsList.cache_filename()):
@@ -323,6 +393,12 @@ class CopilotWidget(QWidget):
         all_layout.addLayout(button_layout_3)
 
         self.setLayout(all_layout)
+
+        style = "QLabel, QCheckBox { font: Tahoma 11px; color: #a05000; } \n "
+        style += "QPushButton { background-color: #d07020; font: Tahoma 11px; color: white; }\n"
+        #style += " QLabel { color: white;}"
+        self.setStyleSheet(style)
+
 
         from cherryserver import MiniWebServer
         self.web_display = None
@@ -537,6 +613,8 @@ class CopilotWidget(QWidget):
                 self.say("You're off course with rerouting disabled.")
                 return
 
+        dist = 0
+
         if 'arrived' in jump:  # or " found" in jump
             self.Speaker.speak_now(jump)
         else:
@@ -547,7 +625,7 @@ class CopilotWidget(QWidget):
                     txt += self.Speaker.process_system_name(jump) + '!'
                     self.say(txt,not_now=False)
                     #self.Speaker.speak_system(jump)
-                    self.message("-> " + str(jump))
+                    self.message(" " + str(jump).upper() + ": %.1f LY" % dist)
                     if self.copy_jump_to_clipboard:
                         clipboard.setText(jump)
                         #os.system("echo %s | clip" % jump) # copy system to clipboard
@@ -556,6 +634,10 @@ class CopilotWidget(QWidget):
                         self.web_display.main = '%s - %.1f LY jump' % (jump.upper(), dist or 0)
                         self.web_display.secondary = '%.1f LY to ' % self.remaining_route_length()
                         self.web_display.secondary += str(self.Router.get_route()[-1]).upper()
+
+                    if self.overlayWindow:
+                        left = self.remaining_route_length()
+                        self.overlayWindow.set_message( '%s - %.1f LY (%.1f LY left)' % (jump.upper(), dist or 0, left))
                 else:
                     self.say("Next jump: unknown.")
                     print "Unknown dist from ", sys, "to", jump
@@ -629,6 +711,10 @@ class CopilotWidget(QWidget):
         self.say("Goodbye Commander.")
         if self.web_display:
             self.web_display.stop()
+        try:
+            self.overlayWindow.close()
+        except:
+            print "Couldn't close overlay"
         e.accept()
         super(CopilotWidget, self).close()
 
@@ -700,6 +786,11 @@ class CopilotWidget(QWidget):
 
     def message(self, text):
         self.MessageWidget.append(text)
+        try:
+            if self.verboseOverlay:
+                self.overlayWindow.set_message(text)
+        except:
+            pass
 
     def display_help(self):
         help_text = _HELP
@@ -974,17 +1065,19 @@ class CopilotWindow(QMainWindow):
 
         w = self
         pal = QPalette()
-        # bgcolor = self.settings.value("bgcolor", None) # no easy way to get something that works from QSettings :S
-        pal.setColor(QPalette.Background, QColor(40, 30, 40))
+        #x# bgcolor = self.settings.value("bgcolor", None) # no easy way to get something that works from QSettings :S
+
+        #x#pal.setColor(QPalette.Background, QColor(40, 30, 40))
+        pal.setColor(QPalette.Background, QColor(200, 90, 10))
 
         # fgcolor = self.settings.value("fgcolor", None)
-        pal.setColor(QPalette.Foreground, QColor(40, 235, 40))
+        #x#pal.setColor(QPalette.Foreground, QColor(40, 235, 40))
 
         # pal.setColor(QPalette.Button, QColor("black"))
         # pal.setColor(QPalette.Window,QColor("Black"))
-        pal.setColor(QPalette.Disabled, QPalette.Background, QColor(50, 50, 50))
-        pal.setColor(QPalette.Inactive, QPalette.Background, QColor(50, 50, 50))
-        w.setPalette(pal)
+        #x#pal.setColor(QPalette.Disabled, QPalette.Background, QColor(50, 50, 50))
+        #x#pal.setColor(QPalette.Inactive, QPalette.Background, QColor(50, 50, 50))
+        #w.setPalette(pal)
         w.setFont(QFont("Arial narrow", 11))
         # w.setTextColor(QColor("green"))
         # w.setTextBackgroundColor(QColor("black"))
