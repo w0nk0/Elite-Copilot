@@ -1,7 +1,7 @@
 # DONE - Test and finalize combo box route selection
 # DONE - Optimize routing messages for failed routing etc
-# Done - scroll to next waypoint
-# Maybe: System-wide player chat
+# Done - scroll to nxt waypoint
+# probably not: System-wide player chat
 # TODO - Links button / page
 # TODO - Tooltips (partially done)
 # TODO - Route on "repeat" for endless trading runs back/forth
@@ -10,7 +10,7 @@
 
 __author__ = 'w0nk0'
 APPNAME = 'Elite-Copilot'
-APPVERSION = '0.31'
+APPVERSION = '0.4'
 
 CHECK_TIME = 4000
 REPEAT_NEXT_JUMPS_TIME = 45000
@@ -54,6 +54,7 @@ from talk import EliteTalker
 from donate import write_html
 from elitesystems import EliteSystemsList
 from time import asctime
+import styles
 
 import elitebuttons
 
@@ -131,6 +132,7 @@ class IngameOverlay(QWidget):
         self.text_field.setText("<- Click to move overlay")
 
         self.windowMode = -1
+        self.style = ""
 
         pal = QPalette()
         pal.setColor(QPalette.Base, QColor(10, 10, 10))
@@ -138,12 +140,12 @@ class IngameOverlay(QWidget):
         pal.setColor(QPalette.Text, QColor("orange"))
 
         self.layout = QHBoxLayout()
-        self.btn = QPushButton("*")
+        self.btn = QPushButton(" ")
         #print "btn style"
-        self.btn.setStyleSheet( "* { background: #d07000;}")
-        self.btn.setMaximumWidth(13)
-        self.btn.setMaximumHeight(13)
-        self.btn.setPalette(pal)
+        #self.btn.setStyleSheet( "* { background: #d07000;}")
+        self.btn.setMaximumWidth(11)
+        self.btn.setMaximumHeight(11)
+        #self.btn.setPalette(pal)
         self.btn.clicked.connect(self.changeWindowMode)
         self.layout.addWidget(self.btn)
         self.layout.addWidget(self.text_field)
@@ -152,7 +154,7 @@ class IngameOverlay(QWidget):
         self.setMinimumWidth(350)
 
         self.setWindowTitle("Nav hint")
-        style = "* { background: black; }; * { foreground-color: orange; };"
+        style = styles.overlay_style
         #print "ingameovl style"
         self.setStyleSheet(style)
 
@@ -164,6 +166,20 @@ class IngameOverlay(QWidget):
         self.move(QPoint(20,20))
         self.setSplash()
 
+        self.styleTimer = QTimer().singleShot(200,lambda: self.loadStyleSheet())
+
+    def loadStyleSheet(self, filename="style-overlay.txt"):
+        try:
+            with open(filename,"rt") as f:
+                style = f.read()
+        except:
+            style = styles.overlay_style
+        self.styleTimer = QTimer().singleShot(10000,lambda: self.loadStyleSheet())
+        if self.style == style:
+            return
+        self.style = style
+        self.setStyleSheet(style)
+        print "Overlay style loaded"
 
     def setSplash(self):
         self.setWindowFlags(Qt.SplashScreen | Qt.WindowStaysOnTopHint)
@@ -213,6 +229,7 @@ class CopilotWidget(QWidget):
         # self.route_caching = (parent.settings.value("Route_caching", ROUTE_CACHING).lower() == "true")
         self.route_caching = True
         self.default_jump_length = float(parent.settings.value("Default_jump_length", 0))
+        self.style = ""
 
         settings = parent.settings
 
@@ -239,11 +256,11 @@ class CopilotWidget(QWidget):
         b.append((QPushButton("&Avoid system"), self.avoid_next_jump, 20))
         b[-1][0].setToolTip("Plot a new route without the next waypoint")
         # b.append((QPushButton("&Find Route"), self.find_route,0))
+        b.append((QPushButton("&Go back"), self.reverse_route, 40))
+        b[-1][0].setToolTip("Reverse the route to go back to your origin")
         b.append((QPushButton("&Set Route"), self.set_route_clicked, 00))
         b[-1][0].setToolTip("Use the text in the route box for routing announcements")
         # b.append((QPushButton("Reload Route"),self.reload_route_to_widget))
-        b.append((QPushButton("&Go back"), self.reverse_route, 40))
-        b[-1][0].setToolTip("Reverse the route to go back to your origin")
         b.append((QPushButton("Help"), self.display_help, 0))
         b[-1][0].setToolTip("Display some help in the lower text box")
         
@@ -285,7 +302,7 @@ class CopilotWidget(QWidget):
         lbl4.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         lbl4.setBuddy(self.drive_entry)
         combo_layout.addWidget(lbl4)
-        self.route_btn = QPushButton("&Find Route")
+        self.route_btn = QPushButton(" &Find Route ")
         self.route_btn.clicked.connect(self.find_route)
         combo_layout.addWidget(self.route_btn)
 
@@ -330,9 +347,9 @@ class CopilotWidget(QWidget):
         self.RouteWidget.setFont(QFont("Arial", 13))
         pal = QPalette()
         pal.setColor(QPalette.Base, QColor("Black"))
-        w.setPalette(pal)
+        #w.setPalette(pal)
         w.setTextColor(QColor(110, 90, 255))
-        w.setTextBackgroundColor(QColor("black"))
+        #w.setTextBackgroundColor(QColor("black"))
 
         button_layout_3 = QHBoxLayout()
 
@@ -394,11 +411,7 @@ class CopilotWidget(QWidget):
 
         self.setLayout(all_layout)
 
-        style = "QLabel, QCheckBox { font: Tahoma 11px; color: #a05000; } \n "
-        style += "QPushButton { background-color: #d07020; font: Tahoma 11px; color: white; }\n"
-        #style += " QLabel { color: white;}"
-        self.setStyleSheet(style)
-
+        self.setStyleSheet(styles.default_style)
 
         from cherryserver import MiniWebServer
         self.web_display = None
@@ -424,6 +437,7 @@ class CopilotWidget(QWidget):
         if self.Watcher:
             self.fill_first_system()  # needs Watcher to be set up
 
+        self.loadStyleSheet()
         # noinspection PyCallByClass,PyTypeChecker
         QTimer.singleShot(500, lambda: self.initialize_combo_boxes())
 
@@ -447,6 +461,22 @@ class CopilotWidget(QWidget):
         rnd = int(qrand()/100.0*len(all_systems))
 
         cb.setEditText(all_systems[rnd])
+
+    def loadStyleSheet(self, filename="style-main.txt"):
+        try:
+            with open(filename,"rt") as f:
+                style = f.read()
+        except:
+            print "No main style file found. Not restyling."
+            style= styles.default_style
+
+        self.styleTimer = QTimer().singleShot(5000,lambda: self.loadStyleSheet())
+        if self.style == style:
+            return
+        self.style = style
+
+        self.setStyleSheet(style)
+        print "Main style loaded"
 
     def fill_first_system(self):
         route_text = self.RouteWidget.toPlainText()
@@ -519,12 +549,12 @@ class CopilotWidget(QWidget):
     @property
     def muted(self):
         value = self.mute_button.isCheckable()
-        print "Muted:", value
+        #print "Muted:", value
         return value
 
     @muted.setter
     def muted(self,flag):
-        print "Setting to",flag
+        #print "Setting to",flag
         if flag:
             self.mute_button.setIcon(QIcon(MUTE_ICON_FILE))
             self.mute_button.setCheckable(False)
@@ -1078,7 +1108,7 @@ class CopilotWindow(QMainWindow):
         #x#pal.setColor(QPalette.Disabled, QPalette.Background, QColor(50, 50, 50))
         #x#pal.setColor(QPalette.Inactive, QPalette.Background, QColor(50, 50, 50))
         #w.setPalette(pal)
-        w.setFont(QFont("Arial narrow", 11))
+        #w.setFont(QFont("Arial narrow", 11))
         # w.setTextColor(QColor("green"))
         # w.setTextBackgroundColor(QColor("black"))
 
@@ -1087,14 +1117,35 @@ class CopilotWindow(QMainWindow):
         #self.setWindowFlags(Qt.SplashScreen)
         self.netlog_path = ""
 
+        self.setStyleSheet("* {background-color: #000;}")
+        try:
+            self.setStyleSheet(open("style-background.txt".read()))
+        except:
+            print "No main style sheet"
+
         self.initialize()
 
     def initialize(self):
         self.netlog_path = self.settings.value("NetlogPath", "")
         route_text = self.settings.value("LastRoute", "DONE: No Route")
+
+        #self.setStyleSheet(styles.default_style)
+
         self.mainWidget.set_route_text(route_text)
         self.mainWidget.set_log_path(self.netlog_path)
         self.mainWidget.initialize()
+
+        tim = self.styletimer=QTimer()
+        tim.timeout.connect(self.restyle)
+        tim.start(5000)
+
+    def restyle(self):
+        mine = self.styleSheet()
+        main = self.mainWidget.styleSheet()
+        if mine == main: return
+        if self.mainWidget.style == styles.default_style: return
+        print "Restyling main window"
+        self.setStyleSheet(main)
 
     def write_settings(self):
         global global_hot_key_1, global_hot_key_2, global_hot_key_3
