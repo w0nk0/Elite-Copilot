@@ -22,6 +22,8 @@ NATOSPELL = 'True'
 HYPHENSPELL = 'False'
 ROUTE_CACHING = "True"
 
+DEFAULT_SYSTEMS_DATA = "systems.json"
+
 _HELP = ("\n"
          "HELP\n"
          "****\n"
@@ -226,8 +228,8 @@ class CopilotWidget(QWidget):
         self.verbose = (parent.settings.value("Verbose", "False").lower() == "true")
         self.nato_spell = (parent.settings.value("Nato_spelling", NATOSPELL).lower() == "true")
         self.hyphen_spell = (parent.settings.value("Hyphen_spelling", HYPHENSPELL).lower() == "true")
-        # self.route_caching = (parent.settings.value("Route_caching", ROUTE_CACHING).lower() == "true")
-        self.route_caching = True
+        self.route_caching = (parent.settings.value("Route_caching", ROUTE_CACHING).lower() == "true")
+        #self.route_caching = True
         self.default_jump_length = float(parent.settings.value("Default_jump_length", 0))
         self.style = ""
 
@@ -372,6 +374,10 @@ class CopilotWidget(QWidget):
         button_layout_3.addSpacing(10)
         button_layout_3.addWidget(netlog_btn)
 
+        splash_btn = QPushButton("*")
+        splash_btn.clicked.connect(lambda: self.setWindowFlags(Qt.SplashScreen))
+        button_layout_3.addWidget(splash_btn)
+
         print "Showing overlay"
         self.overlayWindow = IngameOverlay(None)
         self.overlayWindow.show()
@@ -382,7 +388,11 @@ class CopilotWidget(QWidget):
             print "Caching:", str(self.route_caching)
             if self.route_caching:
                 self.say("Loading cache!")
-            self.systems = EliteSystemsList(caching=self.route_caching, default_jump=self.default_jump_length)
+
+            systems_data = str(parent.settings.value("Systems_data_filename", DEFAULT_SYSTEMS_DATA))
+            self.message("Using data from %s" % systems_data)
+            self.systems = EliteSystemsList(caching=self.route_caching, default_jump=self.default_jump_length, filename=systems_data)
+
             self.systems.economic_routing = str(parent.settings.value("shortest_route", False)).lower() == "true"
             self.econ_routing = self.systems.economic_routing
             if self.route_caching:
@@ -391,10 +401,11 @@ class CopilotWidget(QWidget):
                 else:
                     self.say("Failed.")
         except Exception, err:
-            print err
+            print "Error with loading systems data:",err
             msg = QMessageBox()
             msg.setText(
-                "You need the systems.json file for routing, please download it from where you got this program from.")
+                "You need the systems.json file for routing, please download it from where you got this program from."
+                "\n\nError:"+str(err.message))
             msg.exec_()
 
         all_layout.addLayout(button_layout, 0)

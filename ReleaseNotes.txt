@@ -1,9 +1,30 @@
-V 0.31
+V 0.40
 
-- added an always-on-top ingame overlay window!
-- added an integrated web server to see the next jump on your smartphone from http://localip:8080
-  (see the lower window output upon startup for your local ip address!)
-- Slight layout changes, introduction of Paypal logo on donation button since several users asked how to donate
+- Elite Copilot now has a fully functioning in-game overlay that will display your next planned jump! 
+  You can move the overlay by clicking on the small button to the left of the text. Click it again when done.
+  The position will not be saved, this might come in a future release. If you close the overlay, you'll have to restart E:C to get it back.
+  The overlay won't work with E:D in fullscreen, switch to borderless mode for it to work.
+  The overlay comes with customizable design, see below
+
+- you can use a more recent (but also potentially error-containing) version of the star database by downloading tgcsystems.json and
+  having the following setting in the .ini configuration:
+  
+  Systems_data_filename=tgcsystems.json
+  Route_caching=false
+
+- There is now a built-in webserver so you can open http://your-local-ip:8080 on your smartphone to get the overlay info outside of your screen
+
+  Watch out for a message about your (probably) local IP address in the lower messages window if you want to use this
+  The Windows firewall pop-up is because of this function. You can deny it if you have security concerns, but of course then this function won't work.
+  I won't be able to support you with issues around this function, but the community probably can as some have already used it.
+
+- The main window and the overlay are user-customizable in terms of design. 
+  There is a style-examples zipfile in the main archive, unzip it to E:C's directory and refer to 
+  http://qt-project.org/doc/qt-4.8/stylesheet-examples.html for the formatting syntax. I can NOT provide support for re-skinning, but
+  I'm sure members of the facebook community will be able help you a bit, as some have already reskinned things for the beta release.
+
+- Main window design overhaul, changes in donation after several users' suggestions
+
 
 V 0.30
 

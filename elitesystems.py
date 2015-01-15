@@ -49,8 +49,22 @@ class EliteSystemsList:
 
         jdata = json.loads(data)
         self.coordinates = {}
-        for x in jdata:
-            self.coordinates[x["name"]] = (x["x"], x["y"], x["z"])
+        if filename == "systems.json":
+            for x in jdata:
+                name = x["name"]
+                self.coordinates[name] = (x["x"], x["y"], x["z"])
+                #print '"',name,'": ',self.coordinates[name]
+
+        elif filename == "tgcsystems.json":
+            data = jdata["systems"]
+            for x in data:
+                name = x["name"]
+                coords = x["coord"]
+                if coords[0] == None or x["cr"] < 2:
+                    print "Ignoring", x
+                    continue
+                self.coordinates[name] = (coords[0], coords[1], coords[2])
+                #print '"',name,'": ',self.coordinates[name]
 
         self.caching = caching
         self.known_neighbors = {}  # dict of (system, range) -> list
@@ -210,7 +224,11 @@ class EliteSystemsList:
             # find eligible neighbors and sorts them
             n = neighbor_ranker(current, target, max_distance, bad_steps)
             OK = lambda x: x not in bad_steps and x not in steps
-            eligible = [node for node in n if OK(node[0][0])]
+            try:
+                eligible = [node for node in n if OK(node[0][0])]
+            except:
+                print "Error in route() - eligible = [node for node in n if OK(node[0][0])]"
+                print n
             n = eligible
 
             # if no systems to jump to available
@@ -268,7 +286,7 @@ class EliteSystemsList:
             steps.append(current)
 
         if verbose: print "Closest point:", closest_system, "at ", lowest_dist, "LY"
-        if not closest_system == target:
+        if not closest_system == target and lowest_dist>0.1:
             steps.append("Closest system: %s" % closest_system)
 
         if len(steps) == 1:
@@ -283,8 +301,8 @@ class EliteSystemsList:
             if previous:
                 try:
                     distance += self.distance_between(step, previous)
-                except:
-                    print "Couldn't find distance from %s to %s" % (step, previous)
+                except Exception, err:
+                    print "Couldn't find distance from %s to %s, error: %s" % (step, previous,err)
                     return -1.0
             previous = step
         return distance
@@ -315,6 +333,7 @@ class EliteSystemsList:
 
         s = Coordinate(self.coordinates[s])
         t = Coordinate(self.coordinates[t])
+        if s == t: return 0
 
         return s.distance(t)
 
@@ -459,7 +478,9 @@ def make_cache():
 
 
 if __name__ == "__main__":
-    # make_cache()
+    make_cache()
+    raise SystemExit
+
     coords = read_jumps()
     plot_systems(99,coords)
 
