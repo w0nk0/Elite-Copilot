@@ -61,7 +61,7 @@ class EliteSystemsList:
                 name = x["name"]
                 coords = x["coord"]
                 if coords[0] == None or x["cr"] < 2:
-                    print "Ignoring", x
+                    # debug # print "Ignoring", x
                     continue
                 self.coordinates[name] = (coords[0], coords[1], coords[2])
                 #print '"',name,'": ',self.coordinates[name]

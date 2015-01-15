@@ -242,9 +242,12 @@ class CopilotWidget(QWidget):
         global global_hot_key_3
         global_hot_key_3 = str(settings.value("Hotkey_3", global_hot_key_3))
 
-        self.Speaker = EliteTalker(nato_spelling=self.nato_spell, hyphen_spelling=self.hyphen_spell)
-        print("Nato_spell %s, Hyphen_spell %s" % (self.Speaker.nato, self.Speaker.hyphen))
-        # print("Nato_spell %s, Hyphen_spell %s" % (self.nato_spell,self.hyphen_spell))
+        try:
+            self.Speaker = EliteTalker(nato_spelling=self.nato_spell, hyphen_spelling=self.hyphen_spell)
+            print("Nato_spell %s, Hyphen_spell %s" % (self.Speaker.nato, self.Speaker.hyphen))
+        except Exception, err:
+            print "!! Exception setting up speech: %s" % err.message
+            self.Speaker = None
 
         all_layout = QVBoxLayout()
 
@@ -376,7 +379,7 @@ class CopilotWidget(QWidget):
 
         splash_btn = QPushButton("*")
         splash_btn.clicked.connect(lambda: self.setWindowFlags(Qt.SplashScreen))
-        button_layout_3.addWidget(splash_btn)
+        #button_layout_3.addWidget(splash_btn)
 
         print "Showing overlay"
         self.overlayWindow = IngameOverlay(None)
@@ -477,11 +480,11 @@ class CopilotWidget(QWidget):
         try:
             with open(filename,"rt") as f:
                 style = f.read()
+            self.styleTimer = QTimer().singleShot(5000,lambda: self.loadStyleSheet())
         except:
             print "No main style file found. Not restyling."
             style= styles.default_style
 
-        self.styleTimer = QTimer().singleShot(5000,lambda: self.loadStyleSheet())
         if self.style == style:
             return
         self.style = style
@@ -803,8 +806,11 @@ class CopilotWidget(QWidget):
         self.message('"' + text + '"')
         if self.muted:
             return
-        if self.Speaker:
-            self.Speaker.speak(text, not_now)
+        try:
+            if self.Speaker:
+                self.Speaker.speak(text, not_now)
+        except Exception, err:
+            print "!! Exception when speaking %s : %s %s" % (text, err.message, err.args)
 
     def reverse_route(self):
         self.message("Reversing the router's current route")
