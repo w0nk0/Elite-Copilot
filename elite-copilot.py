@@ -127,13 +127,14 @@ def hook_setup(old_hook=None):
     hm.HookKeyboard()
     return hm
 
+
 class IngameOverlay(QWidget):
     def __init__(self, parent):
-        super(IngameOverlay,self).__init__(parent)
-        self.text_field = w = QLineEdit()
+        super(IngameOverlay, self).__init__(parent)
+        self.text_field = QLineEdit()
         self.text_field.setText("<- Click to move overlay")
 
-        self.windowMode = -1
+        self.window_mode = -1
         self.style = ""
 
         pal = QPalette()
@@ -143,12 +144,12 @@ class IngameOverlay(QWidget):
 
         self.layout = QHBoxLayout()
         self.btn = QPushButton(" ")
-        #print "btn style"
+        # print "btn style"
         #self.btn.setStyleSheet( "* { background: #d07000;}")
         self.btn.setMaximumWidth(11)
         self.btn.setMaximumHeight(11)
         #self.btn.setPalette(pal)
-        self.btn.clicked.connect(self.changeWindowMode)
+        self.btn.clicked.connect(self.change_window_mode)
         self.layout.addWidget(self.btn)
         self.layout.addWidget(self.text_field)
         self.setLayout(self.layout)
@@ -165,47 +166,48 @@ class IngameOverlay(QWidget):
         #print "txtfld style", self.text_field
         self.text_field.setStyleSheet("* { border-style: 0px;}")
         self.text_field.setFont(QFont("Arial", 12))
-        self.move(QPoint(20,20))
-        self.setSplash()
+        self.move(QPoint(20, 20))
+        self.set_splash()
 
-        self.styleTimer = QTimer().singleShot(200,lambda: self.loadStyleSheet())
+        self.styleTimer = QTimer().singleShot(200, lambda: self.load_style_sheet())
 
-    def loadStyleSheet(self, filename="style-overlay.txt"):
+    def load_style_sheet(self, filename="style-overlay.txt"):
         try:
-            with open(filename,"rt") as f:
+            with open(filename, "rt") as f:
                 style = f.read()
-        except:
+        except Exception:
             style = styles.overlay_style
-        self.styleTimer = QTimer().singleShot(10000,lambda: self.loadStyleSheet())
+        self.styleTimer = QTimer().singleShot(10000, lambda: self.load_style_sheet())
         if self.style == style:
             return
         self.style = style
         self.setStyleSheet(style)
         print "Overlay style loaded"
 
-    def setSplash(self):
+    def set_splash(self):
         self.setWindowFlags(Qt.SplashScreen | Qt.WindowStaysOnTopHint)
-        #self.setWindowFlags(
         print("Splash")
 
-    def setDialog(self):
+    def set_dialog(self):
         self.setWindowFlags(Qt.Dialog)
         print("Dialog")
 
-    def set_message(self,txt):
+    def set_message(self, txt):
         self.text_field.setText(txt)
 
-    def changeWindowMode(self,msg=None):
-        self.windowMode = -self.windowMode
-        pos=self.pos()
+    # noinspection PyUnusedLocal
+    def change_window_mode(self, msg=None):
+        self.window_mode = -self.window_mode
+        pos = self.pos()
         self.hide()
-        if self.windowMode>0:
-            self.setDialog()
+        if self.window_mode > 0:
+            self.set_dialog()
         else:
-            self.setSplash()
+            self.set_splash()
         self.show()
-        mode = self.windowMode
-        self.move(pos.x()- 10 * mode, pos.y() - 10 * mode)
+        mode = self.window_mode
+        self.move(pos.x() - 10 * mode, pos.y() - 10 * mode)
+
 
 # noinspection PyBroadException
 class CopilotWidget(QWidget):
@@ -221,7 +223,7 @@ class CopilotWidget(QWidget):
         self.no_reroute_systems = []
         self.bad_systems = []  # systems to avoid when routing
         self.hotkey_hook = None
-        self.hook_timer = QTimer() # initialized later, needs to be reinitialized regularly so it doesnt break
+        self.hook_timer = QTimer()  # initialized later, needs to be reinitialized regularly so it doesnt break
         self.searching_route = False
         self.copy_jump_to_clipboard = (parent.settings.value("CopyJumpToClipboard", "True").lower() == "true")
 
@@ -229,7 +231,7 @@ class CopilotWidget(QWidget):
         self.nato_spell = (parent.settings.value("Nato_spelling", NATOSPELL).lower() == "true")
         self.hyphen_spell = (parent.settings.value("Hyphen_spelling", HYPHENSPELL).lower() == "true")
         self.route_caching = (parent.settings.value("Route_caching", ROUTE_CACHING).lower() == "true")
-        #self.route_caching = True
+        # self.route_caching = True
         self.default_jump_length = float(parent.settings.value("Default_jump_length", 0))
         self.style = ""
 
@@ -268,7 +270,7 @@ class CopilotWidget(QWidget):
         # b.append((QPushButton("Reload Route"),self.reload_route_to_widget))
         b.append((QPushButton("Help"), self.display_help, 0))
         b[-1][0].setToolTip("Display some help in the lower text box")
-        
+
         for b in self.buttons:
             button_layout.addWidget(b[0])
             if b[2]:
@@ -278,7 +280,7 @@ class CopilotWidget(QWidget):
         b[0].setFixedWidth(50)
         # Hotkey setup
         self.setup_hook()  # why is this here and not up top again?!
-        
+
         # Route planning combo boxes etc
         combo_layout = QHBoxLayout()
         self.start_system_cb = QComboBox()
@@ -293,7 +295,7 @@ class CopilotWidget(QWidget):
         combo_layout.addWidget(self.start_system_cb, 2)
         combo_layout.addWidget(lbl2)
         combo_layout.addWidget(self.destination_system_cb, 2)
-        
+
         lbl3 = QLabel("with")
         lbl3.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.drive_entry = QLineEdit()
@@ -367,9 +369,8 @@ class CopilotWidget(QWidget):
         netlog_btn.clicked.connect(self.netlog_path_dialog)
         # netlog_btn.setEnabled(False)
 
-
-        icon=QIcon(":/PPbtn.png")
-        self.donate_btn = btn = QPushButton(icon,'Donate!') #"Tip me ; )"
+        icon = QIcon(":/PPbtn.png")
+        self.donate_btn = btn = QPushButton(icon, 'Donate!')
 
         btn.clicked.connect(self.donate)
         btn.setFixedWidth(82)
@@ -379,7 +380,7 @@ class CopilotWidget(QWidget):
 
         splash_btn = QPushButton("*")
         splash_btn.clicked.connect(lambda: self.setWindowFlags(Qt.SplashScreen))
-        #button_layout_3.addWidget(splash_btn)
+        #button_layout_3.addWidget(splash_btn) # NOT WORKING LIKE THIS :(
 
         print "Showing overlay"
         self.overlayWindow = IngameOverlay(None)
@@ -394,7 +395,8 @@ class CopilotWidget(QWidget):
 
             systems_data = str(parent.settings.value("Systems_data_filename", DEFAULT_SYSTEMS_DATA))
             self.message("Using data from %s" % systems_data)
-            self.systems = EliteSystemsList(caching=self.route_caching, default_jump=self.default_jump_length, filename=systems_data)
+            self.systems = EliteSystemsList(caching=self.route_caching, default_jump=self.default_jump_length,
+                                            filename=systems_data)
 
             self.systems.economic_routing = str(parent.settings.value("shortest_route", False)).lower() == "true"
             self.econ_routing = self.systems.economic_routing
@@ -404,11 +406,11 @@ class CopilotWidget(QWidget):
                 else:
                     self.say("Failed.")
         except Exception, err:
-            print "Error with loading systems data:",err
+            print "Error with loading systems data:", err
             msg = QMessageBox()
             msg.setText(
                 "You need the systems.json file for routing, please download it from where you got this program from."
-                "\n\nError:"+str(err.message))
+                "\n\nError:" + str(err.message))
             msg.exec_()
 
         all_layout.addLayout(button_layout, 0)
@@ -428,11 +430,13 @@ class CopilotWidget(QWidget):
         self.setStyleSheet(styles.default_style)
 
         from cherryserver import MiniWebServer
+
         self.web_display = None
         try:
             self.web_display = MiniWebServer()
             self.web_display.main = "Elite Copilot has started"
             from findip4address import address
+
             self.message("You can use http://%s:8080 in your smartphone as an external display!" % address())
         except:
             print "Couldn't set up Webserver for smartphone display :("
@@ -451,7 +455,7 @@ class CopilotWidget(QWidget):
         if self.Watcher:
             self.fill_first_system()  # needs Watcher to be set up
 
-        self.loadStyleSheet()
+        self.load_style_sheet()
         # noinspection PyCallByClass,PyTypeChecker
         QTimer.singleShot(500, lambda: self.initialize_combo_boxes())
 
@@ -472,18 +476,18 @@ class CopilotWidget(QWidget):
                 print "Failed to set start system from Watcher in init_combo_boxes"
                 print err
 
-        rnd = int(qrand()/100.0*len(all_systems))
+        rnd = int(qrand() / 100.0 * len(all_systems))
 
         cb.setEditText(all_systems[rnd])
 
-    def loadStyleSheet(self, filename="style-main.txt"):
+    def load_style_sheet(self, filename="style-main.txt"):
         try:
-            with open(filename,"rt") as f:
+            with open(filename, "rt") as f:
                 style = f.read()
-            self.styleTimer = QTimer().singleShot(5000,lambda: self.loadStyleSheet())
+            self.style_timer = QTimer().singleShot(5000, lambda: self.load_style_sheet())
         except:
             print "No main style file found. Not restyling."
-            style= styles.default_style
+            style = styles.default_style
 
         if self.style == style:
             return
@@ -563,12 +567,12 @@ class CopilotWidget(QWidget):
     @property
     def muted(self):
         value = self.mute_button.isCheckable()
-        #print "Muted:", value
+        # print "Muted:", value
         return value
 
     @muted.setter
-    def muted(self,flag):
-        #print "Setting to",flag
+    def muted(self, flag):
+        # print "Setting to",flag
         if flag:
             self.mute_button.setIcon(QIcon(MUTE_ICON_FILE))
             self.mute_button.setCheckable(False)
@@ -667,8 +671,8 @@ class CopilotWidget(QWidget):
                 if dist:
                     txt = 'Next jump is: %d light years to ' % (dist or 0)
                     txt += self.Speaker.process_system_name(jump) + '!'
-                    self.say(txt,not_now=False)
-                    #self.Speaker.speak_system(jump)
+                    self.say(txt, not_now=False)
+                    # self.Speaker.speak_system(jump)
                     self.message(" " + str(jump).upper() + ": %.1f LY" % dist)
                     if self.copy_jump_to_clipboard:
                         clipboard.setText(jump)
@@ -681,7 +685,7 @@ class CopilotWidget(QWidget):
 
                     if self.overlayWindow:
                         left = self.remaining_route_length()
-                        self.overlayWindow.set_message( '%s - %.1f LY (%.1f LY left)' % (jump.upper(), dist or 0, left))
+                        self.overlayWindow.set_message('%s - %.1f LY (%.1f LY left)' % (jump.upper(), dist or 0, left))
                 else:
                     self.say("Next jump: unknown.")
                     print "Unknown dist from ", sys, "to", jump
@@ -705,7 +709,7 @@ class CopilotWidget(QWidget):
         self.message('# Entering system "%s" @ %s' % (system, asctime()))
         if self.routing:
             self.say('Entering system "%s"' % system, True)
-            #self.Speaker.announce_system(system)  # TODO - adapt to self.say() strategy
+            # self.Speaker.announce_system(system)  # TODO - adapt to self.say() strategy
             QTimer().singleShot(NEXT_JUMP_WAIT_TIME, lambda: self.check_route(system))
 
             current_route = self.Router.get_route()
@@ -715,7 +719,7 @@ class CopilotWidget(QWidget):
 
             if distance > 0 and self.Router.system_in_route(system):
                 message = "%.1f Light years until %s" % (distance, target)
-                self.say(message,not_now=False)
+                self.say(message, not_now=False)
             else:
                 self.say("Remaining distance unknown.")
                 print "Not announcing distance %d from %s, not in %s" % (distance, system, str(current_route))
@@ -778,6 +782,7 @@ class CopilotWidget(QWidget):
         with open("%s.log" % APPNAME, "rt") as f:
             log = f.readlines()
             log = log[-lines:]
+
         return log
 
     def set_route_text(self, text_or_list):
@@ -869,13 +874,13 @@ class CopilotWidget(QWidget):
             prev = self.Watcher.last_system()
             for jump in jumps:
                 dist = self.systems.distance_between(prev, jump)
-                self.say("%d light years to " % int(dist),not_now=True)
+                self.say("%d light years to " % int(dist), not_now=True)
                 if not self.muted:
                     self.Speaker.speak_system(jump)
                 prev = jump
 
                 if jump != jumps[-1]:
-                    self.say(" then ",not_now=True)
+                    self.say(" then ", not_now=True)
 
     def netlog_path_dialog(self):
         f_name, _ = QFileDialog().getOpenFileName(self, 'Navigate to one of the netLog files', '.', "netlog*.*")
@@ -932,14 +937,14 @@ class CopilotWidget(QWidget):
             return
 
         self.default_jump_length = self.systems.last_routing_jump_distance
-        params = (len(route)-1, start, destination, self.default_jump_length)
+        params = (len(route) - 1, start, destination, self.default_jump_length)
         self.message("Route with %d jumps from %s to %s with %.1f LY jump distance." % params)
 
         self.RouteWidget.setText("\n".join(route))
         self.routing = True
         self.set_route_from_widget()
 
-        params = len(route)-1, self.systems.route_length(route)
+        params = len(route) - 1, self.systems.route_length(route)
         if params[1] < 0:
             self.say("No route found, you might need to upgrade your F S D.")
             print "start", start, "route", route
@@ -1006,8 +1011,8 @@ class CopilotWidget(QWidget):
             if spoken >= 3:
                 continue
             # if new_dist > dist: continue
-            self.say("%.0f Light years to" % new_dist,not_now=True)
-            self.Speaker.speak_system(str(system_name),not_now=True)
+            self.say("%.0f Light years to" % new_dist, not_now=True)
+            self.Speaker.speak_system(str(system_name), not_now=True)
             self.say("%.0f light years left" % jump_dist)
             spoken += 1
 
@@ -1068,7 +1073,7 @@ class CopilotWidget(QWidget):
                 print "filtered:", filtered
 
     def scroll_to_text(self, jump):
-        #self.say("Delaying things a little bit")
+        # self.say("Delaying things a little bit")
         print "Scrolling to %s" % jump
         #self.RouteWidget.setFocus(Qt.MouseFocusReason)
 
@@ -1096,6 +1101,7 @@ class CopilotWidget(QWidget):
         #self.RouteWidget.moveCursor()
         #QTextCursor.sel
 
+
 class CopilotWindow(QMainWindow):
     def __init__(self, parent=None):
         super(CopilotWindow, self).__init__(parent)
@@ -1110,9 +1116,8 @@ class CopilotWindow(QMainWindow):
 
         self.autoFillBackground()
 
-        w = self
         pal = QPalette()
-        #x# bgcolor = self.settings.value("bgcolor", None) # no easy way to get something that works from QSettings :S
+        # x# bgcolor = self.settings.value("bgcolor", None) # no easy way to get something that works from QSettings :S
 
         #x#pal.setColor(QPalette.Background, QColor(40, 30, 40))
         pal.setColor(QPalette.Background, QColor(200, 90, 10))
@@ -1137,8 +1142,8 @@ class CopilotWindow(QMainWindow):
         self.setStyleSheet("* {background-color: #000;}")
         try:
             self.setStyleSheet(open("style-background.txt".read()))
-        except:
-            print "No main style sheet"
+        except Exception, err:
+            print "No main style sheet", err.message
 
         self.initialize()
 
@@ -1146,21 +1151,23 @@ class CopilotWindow(QMainWindow):
         self.netlog_path = self.settings.value("NetlogPath", "")
         route_text = self.settings.value("LastRoute", "DONE: No Route")
 
-        #self.setStyleSheet(styles.default_style)
+        # self.setStyleSheet(styles.default_style)
 
         self.mainWidget.set_route_text(route_text)
         self.mainWidget.set_log_path(self.netlog_path)
         self.mainWidget.initialize()
 
-        tim = self.styletimer=QTimer()
+        tim = QTimer() # = self.styletimer =
         tim.timeout.connect(self.restyle)
-        tim.start(5000)
+        tim.start(10000)
 
     def restyle(self):
         mine = self.styleSheet()
         main = self.mainWidget.styleSheet()
-        if mine == main: return
-        if self.mainWidget.style == styles.default_style: return
+        if mine == main:
+            return
+        if self.mainWidget.style == styles.default_style:
+            return
         print "Restyling main window"
         self.setStyleSheet(main)
 
