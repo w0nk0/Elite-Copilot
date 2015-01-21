@@ -9,6 +9,8 @@ ECONOMIC_ROUTING = True
 
 SYSTEMS_JSON_URL = 'https://github.com/SteveHodge/ed-systems/blob/master/systems.json?raw=true'
 
+verbose = False
+
 class Coordinate:
     def __init__(self, vector):
         if isinstance(vector, dict):
@@ -41,9 +43,16 @@ class EliteSystem():
     def __repr__(self):
         return "EliteSystem('%s', %s)" % (self.name, self.coordinates)
 
+    def distance_to(self,other):
+        return self.coordinates.distance(other.coordinates)
 
 class EliteSystemsList:
-    def __init__(self, filename="systems.json", caching=True, default_jump=0):
+    def __init__(self, filename="systems.json", caching=True, default_jump=0, be_verbose = "default"):
+        if be_verbose == "default":
+            self.verbose = verbose
+        else:
+            self.verbose = be_verbose
+
         with open(filename, "rt") as f:
             data = f.read()
 
@@ -85,7 +94,7 @@ class EliteSystemsList:
         system = self.guess_system_name(system_name)
         if not system:
             system = self.guess_system_name(system_name, guess_partial=True)
-            print "Guessing you mean %s ?" % system
+            print "Can't find %s - guessing you mean %s ?" % (system_name,system)
         if not system:
             return None
 
@@ -261,10 +270,10 @@ class EliteSystemsList:
                 break
             closest = n[0]
             # print closest
-            if verbose: print "%20s " % current + " --> ",
+            if self.verbose: print "%20s " % current + " --> ",
             current = closest[0][0]
 
-            if verbose: print "%20s " % current + " remaining: %5.1f LY " % (sqrt(closest[1]))  # sqrt optimization
+            if self.verbose: print "%20s " % current + " remaining: %5.1f LY " % (sqrt(closest[1]))  # sqrt optimization
 
             if closest[1] < lowest_dist:
                 lowest_dist = closest[1]
@@ -285,7 +294,7 @@ class EliteSystemsList:
                     break
             steps.append(current)
 
-        if verbose: print "Closest point:", closest_system, "at ", lowest_dist, "LY"
+        if self.verbose: print "Closest point:", closest_system, "at ", lowest_dist, "LY"
         if not closest_system == target and lowest_dist>0.1:
             steps.append("Closest system: %s" % closest_system)
 
