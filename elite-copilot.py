@@ -1,3 +1,16 @@
+DEBUG_VERSION = False
+
+# ### DEBUG ####
+#
+if DEBUG_VERSION:
+    import sys
+
+    debug_file = open("elite-copilot-debug.txt", "w")
+    sys.stdout = debug_file
+#
+#### DEBUG ###
+
+
 # DONE - Test and finalize combo box route selection
 # DONE - Optimize routing messages for failed routing etc
 # Done - scroll to nxt waypoint
@@ -5,12 +18,14 @@
 # TODO - Links button / page
 # TODO - Tooltips (partially done)
 # TODO - Route on "repeat" for endless trading runs back/forth
+# TODO - list of rare goods route stops for rare traders in separate window or text file for now
+#        used upon "routing complete" to plan next route
 
 # main window palette.button -> black commented out re Sharkan's black buttons bug
 
 __author__ = 'w0nk0'
 APPNAME = 'Elite-Copilot'
-APPVERSION = '0.4'
+APPVERSION = '0.41beta'
 
 CHECK_TIME = 4000
 REPEAT_NEXT_JUMPS_TIME = 45000
@@ -23,6 +38,12 @@ HYPHENSPELL = 'False'
 ROUTE_CACHING = "True"
 
 DEFAULT_SYSTEMS_DATA = "systems.json"
+
+from raregoods import RareGoodsRoute, ROUTE_FILE
+import os
+
+DO_RARE_GOOD_RUN = os.path.exists(ROUTE_FILE)
+rare_goods_route = RareGoodsRoute()
 
 _HELP = ("\n"
          "HELP\n"
@@ -57,8 +78,10 @@ from donate import write_html
 from elitesystems import EliteSystemsList
 from time import asctime
 import styles
+import raregoods
 
 import elitebuttons
+
 
 global_hotkey_func_1 = None
 global_hotkey_func_2 = None
@@ -209,13 +232,79 @@ class IngameOverlay(QWidget):
         self.move(pos.x() - 10 * mode, pos.y() - 10 * mode)
 
 
+class QueuedTalker(EliteTalker):
+    def __init__(self, nato_spelling=False, hyphen_spelling=False, nato_max_len=7):
+        EliteTalker.__init__(self, nato_spelling, hyphen_spelling, nato_max_len)
+        self.queue = []
+        self.last_message = ""
+        # QTimer.singleShot(200, lambda: self.work())
+
+    def speak(self, text, not_now=False):
+        if "next jump" in text or "entering" in text:
+            text = self._numbers_speakify(text)
+        # self.s.say(text)
+        #if not_now:
+        #    return
+        #else:
+        #    return self.flush()
+
+        self.queue.append(text)
+        if not_now:
+            QTimer.singleShot(500, lambda: self.work(set_timer=False))
+        else:
+            self.work()
+
+    def work(self, set_timer=False):
+        # print ".",
+        if set_timer:
+            QTimer.singleShot(450, lambda: self.work())
+        #if not len(self.queue): return
+        #print "w",len(self.queue),
+        if len(self.queue):
+            msg = self.queue.pop(0)
+            self.last_message = msg
+            self.s.say(msg)
+
+        try:
+            self.speaking = True
+            self.s.runAndWait()
+            self.speaking = False
+            print "ok:", msg,
+        except:
+            self.queue.insert(0, self.last_message)
+            print "fail, q:", len(self.queue),
+            QTimer.singleShot(200, lambda: self.work(False))
+
+    def _work(self, set_timer=True):
+        # print ".",
+        if set_timer:
+            QTimer.singleShot(250, lambda: self.work())
+        if not len(self.queue): return
+        #print "w",len(self.queue),
+
+        try:
+            self.speaking = True
+            msg = self.queue[0]
+            self.s.say(msg)
+            self.s.runAndWait()
+            self.speaking = False
+            self.queue.remove(msg)
+            print "ok:", msg,
+        except:
+            print "fail, q:", len(self.queue),
+            #QTimer.singleShot(200, lambda: self.work())
+
+    def __getattr__(self, item):
+        return getattr(EliteTalker, item)
+
+
 # noinspection PyBroadException
 class CopilotWidget(QWidget):
     def __init__(self, parent=None):
         super(CopilotWidget, self).__init__(parent)
-
         self.Router = None
         self.Watcher = None
+        self.Rares = raregoods.RareGoodsInfos()
         self.routing = False
         self.log_path = None
         self.watch_log_timer = None
@@ -245,7 +334,8 @@ class CopilotWidget(QWidget):
         global_hot_key_3 = str(settings.value("Hotkey_3", global_hot_key_3))
 
         try:
-            self.Speaker = EliteTalker(nato_spelling=self.nato_spell, hyphen_spelling=self.hyphen_spell)
+            # self.Speaker = EliteTalker(nato_spelling=self.nato_spell, hyphen_spelling=self.hyphen_spell)
+            self.Speaker = QueuedTalker(nato_spelling=self.nato_spell, hyphen_spelling=self.hyphen_spell)
             print("Nato_spell %s, Hyphen_spell %s" % (self.Speaker.nato, self.Speaker.hyphen))
         except Exception, err:
             print "!! Exception setting up speech: %s" % err.message
@@ -378,9 +468,11 @@ class CopilotWidget(QWidget):
         button_layout_3.addSpacing(10)
         button_layout_3.addWidget(netlog_btn)
 
-        splash_btn = QPushButton("*")
-        splash_btn.clicked.connect(lambda: self.setWindowFlags(Qt.SplashScreen))
-        #button_layout_3.addWidget(splash_btn) # NOT WORKING LIKE THIS :(
+        splash_btn = QPushButton("x")
+        splash_btn.clicked.connect(self.setSplashMode)
+        button_layout_3.addWidget(splash_btn)  # NOT WORKING LIKE THIS :(
+
+        # self.clicked.connect(self.was_clicked)
 
         print "Showing overlay"
         self.overlayWindow = IngameOverlay(None)
@@ -440,6 +532,44 @@ class CopilotWidget(QWidget):
             self.message("You can use http://%s:8080 in your smartphone as an external display!" % address())
         except:
             print "Couldn't set up Webserver for smartphone display :("
+
+    def mousePressEvent(self, event, more=None):
+        print "clicked:", event.pos()
+        self._clicked_at = event.pos()
+
+    def mouseReleaseEvent(self, event, more=None):
+        print "released", event.pos()
+        r = event.pos()
+        c = self._clicked_at
+        p = self.parent().pos()
+        self.parent().move(p.x() + r.x() - c.x(), p.y() + r.y() - c.y())
+
+    def setSplashMode(self, event=None):
+        try:
+            splash = self.splashed
+        except:
+            splash = False
+
+        print "Splash mode!"
+        flag = Qt.SplashScreen
+        if splash:
+            flag = Qt.MSWindowsFixedSizeDialogHint
+
+        p = self.parent()
+        pos = self.pos()
+        ppos = p.pos()
+        print pos, ppos
+        # self.parent.__init__()
+        for w in [p]:
+            w.setWindowFlags(flag)
+            #w.hide()
+            w.show()
+            #w.repaint()
+
+        #self.move(ppos.x(),ppos.y())
+        p.move(QPoint(ppos))
+
+        self.splashed = not splash
 
     def initialize(self):
         """Sets up the objects doing the work"""
@@ -680,8 +810,11 @@ class CopilotWidget(QWidget):
 
                     if self.web_display:
                         self.web_display.main = '%s - %.1f LY jump' % (jump.upper(), dist or 0)
-                        self.web_display.secondary = '%.1f LY to ' % self.remaining_route_length()
-                        self.web_display.secondary += str(self.Router.get_route()[-1]).upper()
+                        if raregoods.announcement(sys):
+                            self.web_display.secondary = sys.upper() + ": " + raregoods.announcement(sys)
+                        else:
+                            self.web_display.secondary = '%.1f LY to ' % self.remaining_route_length()
+                            self.web_display.secondary += str(self.Router.get_route()[-1]).upper()
 
                     if self.overlayWindow:
                         left = self.remaining_route_length()
@@ -702,15 +835,22 @@ class CopilotWidget(QWidget):
         if self.Router.route_complete():
             self.routing = False
             self.say('Routing complete!')
+            if DO_RARE_GOOD_RUN:
+                next_stop = rare_goods_route.pop()
+                if not next_stop: return
+                self.routing = True
+                self.say("Trade run mode active! Next stop is %s!" % next_stop)
+                self.find_route(start_system=system, destination_system=next_stop)
 
     def new_system_callback(self, system):
         self.next_jumps_time = time()
         self.start_system_cb.setEditText(system)
         self.message('# Entering system "%s" @ %s' % (system, asctime()))
         if self.routing:
-            self.say('Entering system "%s"' % system, True)
-            # self.Speaker.announce_system(system)  # TODO - adapt to self.say() strategy
+            self.say('Entering system "%s . "' % system + raregoods.announcement(system), True)
+            #self.say()
             QTimer().singleShot(NEXT_JUMP_WAIT_TIME, lambda: self.check_route(system))
+            # self.Speaker.announce_system(system)  # TODO - adapt to self.say() strategy
 
             current_route = self.Router.get_route()
             target = current_route[-1]
@@ -812,6 +952,12 @@ class CopilotWidget(QWidget):
         if self.muted:
             return
         try:
+            # add message to queue
+            # check if speaker busy
+            # if not busy:
+            # speak oldest message in queue
+            # else
+            # re-schedule in 0.5 seconds
             if self.Speaker:
                 self.Speaker.speak(text, not_now)
         except Exception, err:
@@ -885,8 +1031,9 @@ class CopilotWidget(QWidget):
     def netlog_path_dialog(self):
         f_name, _ = QFileDialog().getOpenFileName(self, 'Navigate to one of the netLog files', '.', "netlog*.*")
         logpath = os.path.dirname(f_name)
-        self.set_log_path(logpath)
-        print "Log path set to ", logpath
+        if logpath:
+            self.set_log_path(logpath)
+            print "Log path set to ", logpath
 
     def find_route(self, start_system=None, destination_system=None):
         print "searching currently:", str(self.searching_route)
