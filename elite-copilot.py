@@ -910,7 +910,7 @@ class CopilotWidget(QWidget):
         log = self.MessageWidget.toPlainText()
         with open("%s.log" % APPNAME, "at") as f:
             # noinspection PyArgumentList
-            time_string = QDateTime.toString(QDateTime.currentDateTime())
+            time_string = QLocale(QLocale.English).toString(QDateTime.currentDateTime(), QLocale.ShortFormat)
             f.write("\n*********************************************************\n")
             f.write(time_string)
             f.write("\n*********************************************************\n")
